@@ -1,6 +1,33 @@
-# Getting Started with Create React App
+# Farm Operations Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React dashboard for managing agricultural commerce, inventory, farmer activity, and access to financial services.
+
+## Features
+
+- Operational metrics and trend views
+- Agricultural input catalogue and inventory management
+- Purchase and sell-order workflows
+- Farmer records and activity views
+- Financial-service applications
+- Market-information requests
+- Responsive layouts, charts, notifications, and data grids
+
+## Technology
+
+React 19, Material UI, MUI X Data Grid, React Router, Recharts, Axios, and the Firebase client SDK.
+
+## Getting started
+
+Requires Node.js 18 or newer and npm.
+
+```bash
+npm install
+npm start
+```
+
+Open `http://localhost:3000`.
+
+The API client is configured in `src/components/services/api.js` and defaults to `http://localhost:8000`. Update it for your deployment environment.
 
 ## Available Scripts
 
