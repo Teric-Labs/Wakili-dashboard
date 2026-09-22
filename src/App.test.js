@@ -1,8 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('./components/services/api', () => ({
+  getDashboardStats: jest.fn().mockResolvedValue({}),
+  getRecentOrders: jest.fn().mockResolvedValue({}),
+}));
+
+test('renders the dashboard shell with navigation', async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+
+  expect(await screen.findByText(/dashboard overview/i)).toBeInTheDocument();
+  expect(screen.getByText(/agritech management system/i)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /orders/i })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
 });

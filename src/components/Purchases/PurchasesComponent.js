@@ -11,9 +11,8 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Paper, 
-  Chip, 
-  IconButton, 
+  Paper,
+  IconButton,
   Tooltip, 
   TextField, 
   InputAdornment,
@@ -52,16 +51,6 @@ const PurchasesComponent = () => {
       setError("Failed to load sell orders. Please try again later.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'done': return 'success';
-      case 'review': return 'info';
-      case 'rejected': return 'error';
-      default: return 'default';
     }
   };
 

@@ -14,8 +14,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Avatar,
-  Tooltip
+  Avatar
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -83,13 +82,6 @@ const Logo = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 2),
   ...theme.mixins.toolbar,
   justifyContent: 'flex-start',
-}));
-
-const UserSection = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: theme.spacing(2),
 }));
 
 const Sidebar = () => {

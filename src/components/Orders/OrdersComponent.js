@@ -11,9 +11,8 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Paper, 
-  Chip, 
-  IconButton, 
+  Paper,
+  IconButton,
   Tooltip, 
   TextField, 
   InputAdornment,
@@ -23,8 +22,7 @@ import {
   MenuItem
 } from '@mui/material';
 import { 
-  Visibility as VisibilityIcon, 
-  MoreVert as MoreVertIcon, 
+  Visibility as VisibilityIcon,
   Search as SearchIcon,
   FilterList as FilterListIcon 
 } from '@mui/icons-material';
@@ -60,16 +58,6 @@ const OrdersComponent = () => {
     order.sender?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.commodity_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'error';
-      case 'completed': return 'primary';
-      default: return 'default';
-    }
-  };
 
   const handleChangePage = (event, newPage) => setPage(newPage);
   const handleSearchChange = (event) => setSearchTerm(event.target.value);

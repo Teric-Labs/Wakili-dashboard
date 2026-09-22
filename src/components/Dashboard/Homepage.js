@@ -1,30 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Grid, 
-  Paper, 
-  Typography, 
-  Card, 
-  CardContent, 
+import {
+  Box,
+  Grid,
+  Typography,
+  Card,
   CardHeader,
-  Avatar, 
-  IconButton,
-  Chip,
-  Divider,
+  Avatar,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   LinearProgress,
-  Stack,
   useTheme
 } from '@mui/material';
-import { 
-  TrendingUp, 
-  MoreVert as MoreVertIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
-  CheckCircle as CheckCircleIcon,
+import {
   Paid as PaidIcon,
   Inventory as InventoryIcon
 } from '@mui/icons-material';

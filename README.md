@@ -14,7 +14,7 @@ React dashboard for managing agricultural commerce, inventory, farmer activity, 
 
 ## Technology
 
-React 19, Material UI, MUI X Data Grid, React Router, Recharts, Axios, and the Firebase client SDK.
+React 19, Material UI, MUI X Data Grid, React Router, Recharts, and Axios.
 
 ## Getting started
 
@@ -28,6 +28,23 @@ npm start
 Open `http://localhost:3000`.
 
 The API client is configured in `src/components/services/api.js` and defaults to `http://localhost:8000`. Update it for your deployment environment.
+
+## Testing
+
+```bash
+CI=true npm test -- --watchAll=false
+```
+
+37 tests across 6 suites: pure-function coverage for `src/utils/helpers.js`, one representative test per API resource group in `src/components/services/api.test.js`, and component tests for `OrdersComponent`, `Homepage`, and `Sidebar`. `npm test` alone launches Jest in interactive watch mode.
+
+## Docker
+
+```bash
+docker build -t wakili-dashboard .
+docker run --rm -p 3000:3000 wakili-dashboard
+```
+
+This is a dev-server image (`npm start`), matching how the parent `phosai/docker-compose.yml` runs it — not a production static build.
 
 ## Available Scripts
 
