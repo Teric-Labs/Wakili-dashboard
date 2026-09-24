@@ -586,26 +586,26 @@ const ComplaintsPage = () => {
                     >
                       <TableCell>
                         <Chip 
-                          label={c.case_type} 
+                          label={c.case_type || 'Claim'} 
                           size="small" 
                           variant="outlined" 
                           color={c.case_type === 'Fraud Incident' ? 'error' : 'primary'} 
                           sx={{ fontWeight: 800, fontSize: '0.65rem' }} 
                         />
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>{c.company_name}</TableCell>
-                      <TableCell>{c.issue_type.replace(/_/g, ' ')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{c.company_name || 'N/A'}</TableCell>
+                      <TableCell>{(c.issue_type || 'General Issue').toString().replace(/_/g, ' ')}</TableCell>
                       <TableCell sx={{ fontFamily: 'monospace' }}>{c.transaction_id || 'N/A'}</TableCell>
                       <TableCell>
                         <Chip 
-                          label={c.priority} 
+                          label={c.priority || 'Normal'} 
                           size="small" 
                           color={c.priority === 'High' ? 'error' : 'default'} 
                           sx={{ fontWeight: 800, height: 18, fontSize: '0.65rem' }} 
                         />
                       </TableCell>
                       <TableCell>
-                        <Chip label={c.status} size="small" color={getStatusColor(c.status)} sx={{ fontWeight: 700, textTransform: 'uppercase' }} />
+                        <Chip label={c.status || 'received'} size="small" color={getStatusColor(c.status)} sx={{ fontWeight: 700, textTransform: 'uppercase' }} />
                       </TableCell>
                       <TableCell align="right">
                         <IconButton size="small" onClick={(e) => handleOpenActionMenu(e, c)}>
@@ -657,14 +657,14 @@ const ComplaintsPage = () => {
               <Stack spacing={2.5}>
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">CASE REFERENCE</Typography>
-                  <Typography variant="body1" fontFamily="monospace" fontWeight="800">{selectedCase.id}</Typography>
+                  <Typography variant="body1" fontFamily="monospace" fontWeight="800">{selectedCase.id || 'N/A'}</Typography>
                 </Box>
 
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">WORKSTREAM & STATUS</Typography>
                   <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                    <Chip label={selectedCase.case_type} color={selectedCase.case_type === 'Fraud Incident' ? 'error' : 'primary'} size="small" sx={{ fontWeight: 800 }} />
-                    <Chip label={selectedCase.status} color={getStatusColor(selectedCase.status)} size="small" sx={{ fontWeight: 800, textTransform: 'uppercase' }} />
+                    <Chip label={selectedCase.case_type || 'Claim'} color={selectedCase.case_type === 'Fraud Incident' ? 'error' : 'primary'} size="small" sx={{ fontWeight: 800 }} />
+                    <Chip label={selectedCase.status || 'received'} color={getStatusColor(selectedCase.status)} size="small" sx={{ fontWeight: 800, textTransform: 'uppercase' }} />
                   </Stack>
                 </Box>
 
@@ -690,7 +690,7 @@ const ComplaintsPage = () => {
 
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">FINTECH ENTITY / PROVIDER</Typography>
-                  <Typography variant="subtitle1" fontWeight="800">{selectedCase.company_name}</Typography>
+                  <Typography variant="subtitle1" fontWeight="800">{selectedCase.company_name || 'N/A'}</Typography>
                 </Box>
 
                 <Box>
@@ -700,13 +700,13 @@ const ComplaintsPage = () => {
 
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">CONTACT / CLAIMANT</Typography>
-                  <Typography variant="body1" fontWeight="700">{selectedCase.contact_details}</Typography>
+                  <Typography variant="body1" fontWeight="700">{selectedCase.contact_details || selectedCase.reporter_contact || 'N/A'}</Typography>
                 </Box>
 
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">STATEMENT & AUDIT SUMMARY</Typography>
                   <Paper sx={{ p: 2, mt: 1, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                    <Typography variant="body2">{selectedCase.description}</Typography>
+                    <Typography variant="body2">{selectedCase.description || 'No detailed statement provided.'}</Typography>
                   </Paper>
                 </Box>
               </Stack>
