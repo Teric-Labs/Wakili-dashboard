@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000'; // Update this with your backend URL
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://wakilibot-main-tum2.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,187 +9,175 @@ const api = axios.create({
   },
 });
 
-// Dashboard endpoints
-export const getDashboardStats = async () => {
-  const response = await api.get('/dashboard/stats');
+// --- Dashboard Telemetry & Analytics ---
+export const getDashboardOverview = async () => {
+  const response = await api.get('/dashboard/overview');
   return response.data;
 };
 
-export const getRecentOrders = async () => {
-  const response = await api.get('/dashboard/recent-orders');
+export const getCaseTypeAnalytics = async () => {
+  const response = await api.get('/complaints/analytics/case-types');
   return response.data;
 };
 
-// New dashboard endpoints
-export const getDashboardTrends = async (period = 'month') => {
-  const response = await api.get(`/dashboard/trends?period=${period}`);
+export const getFintechBreakdown = async () => {
+  const response = await api.get('/complaints/analytics/fintech-breakdown');
   return response.data;
 };
 
-export const getDashboardTopProducts = async (limit = 5) => {
-  const response = await api.get(`/dashboard/top-products?limit=${limit}`);
+// --- Intake Channels Endpoints ---
+export const getChannelsOverview = async () => {
+  const response = await api.get('/channels/overview');
   return response.data;
 };
 
-export const getDashboardActiveLocations = async (limit = 5) => {
-  const response = await api.get(`/dashboard/active-locations?limit=${limit}`);
+export const getUssdLogs = async () => {
+  const response = await api.get('/channels/ussd/logs');
   return response.data;
 };
 
-export const getDashboardPendingActions = async () => {
-  const response = await api.get('/dashboard/pending-actions');
+export const getSmsLogs = async () => {
+  const response = await api.get('/channels/sms/logs');
   return response.data;
 };
 
-// Farm Inputs
-export const getFarmInputs = async (params = {}) => {
-  const response = await api.get('/farm-inputs', { params });
+export const getIvrLogs = async () => {
+  const response = await api.get('/channels/ivr/logs');
   return response.data;
 };
 
-export const searchFarmInputs = async (query) => {
-  const response = await api.get(`/farm-inputs/search?query=${query}`);
+// --- Wakilibot AI Insights Endpoints ---
+export const getAiAgentOverview = async () => {
+  const response = await api.get('/ai-agent/overview');
   return response.data;
 };
 
-export const getFarmInputById = async (id) => {
-  const response = await api.get(`/farm-inputs/${id}`);
+export const getAiAgentIntentPrecision = async () => {
+  const response = await api.get('/ai-agent/intent-precision');
   return response.data;
 };
 
-export const createFarmInput = async (data) => {
-  const response = await api.post('/farm-inputs', data);
+export const getAiAgentLanguages = async () => {
+  const response = await api.get('/ai-agent/languages');
   return response.data;
 };
 
-export const updateFarmInput = async (id, data) => {
-  const response = await api.put(`/farm-inputs/${id}`, data);
+export const getAiAgentSessions = async () => {
+  const response = await api.get('/ai-agent/sessions');
   return response.data;
 };
 
-export const deleteFarmInput = async (id) => {
-  const response = await api.delete(`/farm-inputs/${id}`);
+// --- Audit & Security Logs Endpoints ---
+export const getAuditLogs = async () => {
+  const response = await api.get('/audit/logs');
   return response.data;
 };
 
-export const getFarmInputsCategories = async () => {
-  const response = await api.get('/farm-inputs/categories');
+export const getAuditOfficers = async () => {
+  const response = await api.get('/audit/officers');
   return response.data;
 };
 
-// Agricultural Input Orders
-export const getAgriculturalInputOrders = async (params = {}) => {
-  const response = await api.get('/agricultural-input-orders', { params });
+export const getAuditStats = async () => {
+  const response = await api.get('/audit/stats');
   return response.data;
 };
 
-export const createAgriculturalInputOrder = async (data) => {
-  const response = await api.post('/agricultural-input-orders', data);
+// --- Complaints Endpoints ---
+export const createComplaint = async (data) => {
+  const response = await api.post('/complaints', data);
   return response.data;
 };
 
-export const verifyAgriculturalInputOrder = async (id) => {
-  const response = await api.put(`/agricultural-input-orders/${id}/verify`);
+export const getComplaintStatus = async (complaintId) => {
+  const response = await api.get(`/complaints/${complaintId}/status`);
   return response.data;
 };
 
-export const cancelAgriculturalInputOrder = async (id) => {
-  const response = await api.put(`/agricultural-input-orders-cancel/${id}/cancel`);
+export const updateComplaint = async (complaintId, data) => {
+  const response = await api.put(`/complaints/${complaintId}`, data);
   return response.data;
 };
 
-export const deleteAgriculturalInputOrder = async (id) => {
-  const response = await api.delete(`/agricultural-input-orders/${id}`);
+// --- Incidents Endpoints ---
+export const createIncident = async (data) => {
+  const response = await api.post('/incidents', data);
   return response.data;
 };
 
-export const checkAgriculturalInputOrderStatus = async (id) => {
-  const response = await api.get(`/agricultural-input-orders/${id}/status`);
+export const getIncidentStatus = async (incidentId) => {
+  const response = await api.get(`/incidents/${incidentId}/status`);
   return response.data;
 };
 
-export const updateAgriculturalInputOrderStatus = async (id, status) => {
-  const response = await api.put(`/agricultural-input-orders/${id}/update-status`, { status });
+export const updateIncident = async (incidentId, data) => {
+  const response = await api.put(`/incidents/${incidentId}`, data);
   return response.data;
 };
 
-export const getAgriculturalInputOrdersByDate = async (startDate, endDate) => {
-  const response = await api.get(`/agricultural-input-orders/by-date?start_date=${startDate}&end_date=${endDate}`);
-  return response.data;
-};
-
-// Sell Orders
-export const getSellOrders = async (params = {}) => {
-  const response = await api.get('/sell-orders', { params });
-  return response.data;
-};
-
-export const createSellOrder = async (data) => {
-  const response = await api.post('/sell-orders', data);
-  return response.data;
-};
-
-export const approveSellOrder = async (id) => {
-  const response = await api.put(`/sell-orders/${id}/approve`);
-  return response.data;
-};
-
-export const deleteSellOrder = async (id) => {
-  const response = await api.delete(`/sell-orders/${id}`);
-  return response.data;
-};
-
-export const updateSellOrderStatus = async (id, status) => {
-  const response = await api.put(`/sell-orders/${id}/update-status`, { status });
-  return response.data;
-};
-
-export const getSellOrdersByDate = async (startDate, endDate) => {
-  const response = await api.get(`/sell-orders/by-date?start_date=${startDate}&end_date=${endDate}`);
-  return response.data;
-};
-
-// Financial Services
-export const getFinancialServices = async () => {
-  const response = await api.get('/financial-services');
-  return response.data;
-};
-
-export const applyForFinancialService = async (data) => {
-  const response = await api.post('/financial-services/apply', data);
-  return response.data;
-};
-
-export const getFinancialServiceApplication = async (id) => {
-  const response = await api.get(`/financial-services/applications/${id}`);
-  return response.data;
-};
-
-export const updateFinancialServiceApplicationStatus = async (id, status) => {
-  const response = await api.put(`/financial-services/applications/${id}/update-status`, { status });
-  return response.data;
-};
-
-export const getFinancialServicesByStatus = async (status) => {
-  const response = await api.get(`/financial-services?status=${status}`);
-  return response.data;
-};
-
-// Market Information
-export const getMarketInformation = async (productName, location = null) => {
-  const url = location 
-    ? `/market-information/${productName}?location=${location}`
-    : `/market-information/${productName}`;
+// --- Documents Management Endpoints ---
+export const getDocuments = async (params = {}) => {
+  const { page = 1, page_size = 20, category, search, sort_by = 'upload_date', sort_order = 'desc' } = params;
+  let url = `/documents?page=${page}&page_size=${page_size}&sort_by=${sort_by}&sort_order=${sort_order}`;
+  if (category && category !== 'all') url += `&category=${category}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
   const response = await api.get(url);
   return response.data;
 };
 
-export const requestMarketInformation = async (data) => {
-  const response = await api.post('/market-information/request', data);
+export const getDocumentById = async (documentId) => {
+  const response = await api.get(`/documents/${documentId}`);
   return response.data;
 };
 
-// Error interceptor
+export const uploadDocument = async (formData) => {
+  const response = await api.post('/documents/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const updateDocument = async (documentId, data) => {
+  const response = await api.put(`/documents/${documentId}`, data);
+  return response.data;
+};
+
+export const deleteDocument = async (documentId) => {
+  const response = await api.delete(`/documents/${documentId}`);
+  return response.data;
+};
+
+export const getDocumentStats = async () => {
+  const response = await api.get('/documents/stats/overview');
+  return response.data;
+};
+
+export const downloadDocument = (documentId) => {
+  return `${API_URL}/documents/download/${documentId}`;
+};
+
+// --- Authentication & User Endpoints ---
+export const registerUser = async (data) => {
+  const response = await api.post('/auth/register', data);
+  return response.data;
+};
+
+export const loginUser = async (data) => {
+  const response = await api.post('/auth/login', data);
+  return response.data;
+};
+
+export const getUserProfile = async (userId) => {
+  const response = await api.get(`/auth/user/${userId}`);
+  return response.data;
+};
+
+export const resetPassword = async (data) => {
+  const response = await api.post('/auth/reset-password', data);
+  return response.data;
+};
+
+// Error Interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
