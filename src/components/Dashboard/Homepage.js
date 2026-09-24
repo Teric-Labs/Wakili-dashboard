@@ -201,7 +201,7 @@ const Homepage = () => {
                   HIGH PRIORITY / FRAUD
                 </Typography>
                 <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'error.main' }}>
-                  714
+                  {overview?.high_priority_fraud?.toLocaleString() || '714'}
                 </Typography>
                 <Typography variant="caption" color="error.main" fontWeight="700">
                   Requires Immediate Action

@@ -31,7 +31,7 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
-import { createIncident, updateIncident } from '../services/api';
+import { createIncident, updateIncident, getIncidents } from '../services/api';
 
 const IncidentsPage = () => {
   const theme = useTheme();
@@ -39,6 +39,7 @@ const IncidentsPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     product_service: 'MTN Mobile Money',
@@ -46,24 +47,25 @@ const IncidentsPage = () => {
     transaction_id: ''
   });
 
-  const [incidents, setIncidents] = useState([
-    {
-      incident_id: 'inc-9912-3810',
-      product_service: 'MTN Mobile Money',
-      incident_description: 'Unauthorized cash out from SIM swap attack.',
-      transaction_id: 'TXN-901238',
-      status: 'investigating',
-      created_at: new Date().toISOString()
-    },
-    {
-      incident_id: 'inc-4451-1102',
-      product_service: 'Bank Mobile App',
-      incident_description: 'Double debit during online payment processing.',
-      transaction_id: 'TXN-778129',
-      status: 'reported',
-      created_at: new Date(Date.now() - 43200000).toISOString()
+  const [incidents, setIncidents] = useState([]);
+
+  React.useEffect(() => {
+    fetchIncidents();
+  }, []);
+
+  const fetchIncidents = async () => {
+    setLoading(true);
+    try {
+      const res = await getIncidents();
+      if (Array.isArray(res)) {
+        setIncidents(res);
+      }
+    } catch (err) {
+      console.error("Error fetching incidents:", err);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const handleCreateSubmit = async () => {
     try {

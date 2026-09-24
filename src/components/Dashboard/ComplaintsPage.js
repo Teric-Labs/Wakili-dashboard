@@ -107,11 +107,11 @@ const ComplaintsPage = () => {
       if (caseTypesRes) setMonthlyCaseTypeTrends(caseTypesRes);
       if (fintechRes) setFintechEntityBreakdown(fintechRes);
       if (overviewRes) setOverview(overviewRes);
-      // Populate complaint/incident tables from Firestore if backend has records
-      if (Array.isArray(complaintsRes) && complaintsRes.length > 0) {
+      // Populate complaint/incident tables from Firestore
+      if (Array.isArray(complaintsRes)) {
         setComplaints(complaintsRes);
       }
-      if (Array.isArray(incidentsRes) && incidentsRes.length > 0) {
+      if (Array.isArray(incidentsRes)) {
         setIncidents(incidentsRes);
       }
     } catch (e) {
@@ -127,60 +127,10 @@ const ComplaintsPage = () => {
   const [actionTargetCase, setActionTargetCase] = useState(null);
 
   // Complaints State
-  const [complaints, setComplaints] = useState([
-    {
-      id: 'c7b4a2e1-8890',
-      case_type: 'Consumer Claim',
-      company_name: 'MTN Mobile Money',
-      issue_type: 'sent_money_to_wrong_number',
-      description: 'Customer transferred UGX 500,000 to wrong recipient number 0771234567 instead of 0777654321.',
-      transaction_id: 'TXN-9081234',
-      contact_details: '+256771234567',
-      status: 'received',
-      priority: 'Normal',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'd8a3b1f2-9901',
-      case_type: 'Consumer Claim',
-      company_name: 'Airtel Money',
-      issue_type: 'airtime_deductions',
-      description: 'Unauthorized airtime and wallet deduction without OTP prompt.',
-      transaction_id: 'TXN-5541290',
-      contact_details: '+256701987654',
-      status: 'processing',
-      priority: 'Normal',
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    }
-  ]);
+  const [complaints, setComplaints] = useState([]);
 
   // Incidents State
-  const [incidents, setIncidents] = useState([
-    {
-      id: 'inc-9912-3810',
-      case_type: 'Fraud Incident',
-      company_name: 'MTN Mobile Money',
-      issue_type: 'SIM Swap Fraud',
-      description: 'Unauthorized cash out from SIM swap attack.',
-      transaction_id: 'TXN-901238',
-      contact_details: '+256778990011',
-      status: 'investigating',
-      priority: 'High',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'inc-4451-1102',
-      case_type: 'Fraud Incident',
-      company_name: 'Bank Mobile App',
-      issue_type: 'Double Debit Security Breach',
-      description: 'Double debit during online payment processing.',
-      transaction_id: 'TXN-778129',
-      contact_details: '+256702112233',
-      status: 'reported',
-      priority: 'High',
-      created_at: new Date(Date.now() - 43200000).toISOString()
-    }
-  ]);
+  const [incidents, setIncidents] = useState([]);
 
   // Forms
   const [complaintForm, setComplaintForm] = useState({
