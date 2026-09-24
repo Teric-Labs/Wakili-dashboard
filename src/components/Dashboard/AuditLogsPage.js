@@ -70,9 +70,25 @@ const AuditLogsPage = () => {
         getAuditOfficers().catch(() => null),
         getAuditStats().catch(() => null)
       ]);
-      if (logsRes) setAuditLogs(logsRes);
-      if (officersRes) setOfficerRoster(officersRes);
-      if (statsRes) setAuditStats(statsRes);
+      if (Array.isArray(logsRes)) {
+        setAuditLogs(logsRes);
+      } else if (logsRes?.logs && Array.isArray(logsRes.logs)) {
+        setAuditLogs(logsRes.logs);
+      } else if (logsRes?.data && Array.isArray(logsRes.data)) {
+        setAuditLogs(logsRes.data);
+      }
+
+      if (Array.isArray(officersRes)) {
+        setOfficerRoster(officersRes);
+      } else if (officersRes?.officers && Array.isArray(officersRes.officers)) {
+        setOfficerRoster(officersRes.officers);
+      } else if (officersRes?.data && Array.isArray(officersRes.data)) {
+        setOfficerRoster(officersRes.data);
+      }
+
+      if (statsRes && typeof statsRes === 'object') {
+        setAuditStats(statsRes.data || statsRes);
+      }
     } catch (e) {
       console.error("Backend audit fetch error:", e);
     } finally {
@@ -93,11 +109,24 @@ const AuditLogsPage = () => {
     setMenuAnchor(null);
   };
 
-  const filteredLogs = auditLogs.filter(log =>
-    log.officer.toLowerCase().includes(search.toLowerCase()) ||
-    log.action.toLowerCase().includes(search.toLowerCase()) ||
-    log.target.toLowerCase().includes(search.toLowerCase())
-  );
+  const safeLogs = Array.isArray(auditLogs) ? auditLogs : FALLBACK_LOGS;
+  const safeRoster = Array.isArray(officerRoster) ? officerRoster : FALLBACK_OFFICERS;
+
+  const filteredLogs = safeLogs.filter(log => {
+    if (!log) return false;
+    const officer = (log.officer || log.officer_name || log.user || log.actor || '').toString().toLowerCase();
+    const action = (log.action || log.event || log.action_type || '').toString().toLowerCase();
+    const target = (log.target || log.target_record || log.resource || log.details || '').toString().toLowerCase();
+    const id = (log.id || log.log_id || '').toString().toLowerCase();
+    const s = (search || '').toLowerCase();
+
+    return (
+      officer.includes(s) ||
+      action.includes(s) ||
+      target.includes(s) ||
+      id.includes(s)
+    );
+  });
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -137,7 +166,7 @@ const AuditLogsPage = () => {
                     ACTIVE OFFICERS
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {officerRoster.length} Duty Officers
+                    {safeRoster.length} Duty Officers
                   </Typography>
                   <Typography variant="caption" color="success.main" fontWeight="700">
                     All Analysts Online
@@ -158,7 +187,7 @@ const AuditLogsPage = () => {
                     AUDIT EVENTS (REALTIME)
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {auditLogs.length} Verified Logs
+                    {safeLogs.length} Verified Logs
                   </Typography>
                   <Typography variant="caption" color="success.main" fontWeight="700">
                     100% Immutable Trail
@@ -222,20 +251,20 @@ const AuditLogsPage = () => {
                 CASE OFFICER ACTIVE ROSTER
               </Typography>
               <Stack spacing={2}>
-                {officerRoster.map((officer) => (
+                {safeRoster.map((officer, idx) => (
                   <Stack 
-                    key={officer.name} 
+                    key={officer.name || officer.officer_name || idx} 
                     direction="row" 
                     justifyContent="space-between" 
                     alignItems="center"
                     sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
                   >
                     <Box>
-                      <Typography variant="body2" fontWeight="800">{officer.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">{officer.role}</Typography>
+                      <Typography variant="body2" fontWeight="800">{officer.name || officer.officer_name || 'Officer'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{officer.role || officer.department || 'Analyst'}</Typography>
                     </Box>
                     <Chip 
-                      label={`${officer.activeCases} Cases`} 
+                      label={`${officer.activeCases ?? officer.active_cases ?? 0} Cases`} 
                       size="small" 
                       color="primary" 
                       sx={{ fontWeight: 800, fontSize: '0.68rem' }} 
@@ -275,12 +304,12 @@ const AuditLogsPage = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredLogs.map((log) => (
-                      <TableRow key={log.id} hover>
-                        <TableCell sx={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{log.timestamp}</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>{log.officer}</TableCell>
-                        <TableCell><Chip label={log.action} size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.62rem' }} /></TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem' }}>{log.target}</TableCell>
+                    {filteredLogs.map((log, idx) => (
+                      <TableRow key={log.id || idx} hover>
+                        <TableCell sx={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{log.timestamp || log.created_at || 'N/A'}</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>{log.officer || log.officer_name || log.user || log.actor || 'System'}</TableCell>
+                        <TableCell><Chip label={log.action || log.event || log.action_type || 'LOG'} size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.62rem' }} /></TableCell>
+                        <TableCell sx={{ fontSize: '0.8rem' }}>{log.target || log.target_record || log.resource || log.details || 'N/A'}</TableCell>
                         <TableCell align="right">
                           <IconButton size="small" onClick={handleOpenMenu}>
                             <MoreVertIcon fontSize="small" />

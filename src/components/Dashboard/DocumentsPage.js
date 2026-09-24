@@ -175,9 +175,12 @@ const DocumentsPage = () => {
     }
   };
 
-  const filteredDocs = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = category === 'all' || doc.category?.toLowerCase() === category.toLowerCase();
+  const filteredDocs = (Array.isArray(documents) ? documents : []).filter(doc => {
+    if (!doc) return false;
+    const docTitle = (doc.title || doc.name || '').toString().toLowerCase();
+    const docCat = (doc.category || '').toString().toLowerCase();
+    const matchesSearch = docTitle.includes((search || '').toLowerCase());
+    const matchesCategory = category === 'all' || docCat === (category || '').toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
