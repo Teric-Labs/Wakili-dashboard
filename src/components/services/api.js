@@ -84,6 +84,15 @@ export const getAuditStats = async () => {
 };
 
 // --- Complaints Endpoints ---
+export const getComplaints = async (params = {}) => {
+  const { status, company_name, page = 1, page_size = 50 } = params;
+  let url = `/complaints?page=${page}&page_size=${page_size}`;
+  if (status) url += `&status=${status}`;
+  if (company_name) url += `&company_name=${encodeURIComponent(company_name)}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
 export const createComplaint = async (data) => {
   const response = await api.post('/complaints', data);
   return response.data;
@@ -100,6 +109,15 @@ export const updateComplaint = async (complaintId, data) => {
 };
 
 // --- Incidents Endpoints ---
+export const getIncidents = async (params = {}) => {
+  const { status, product_service, page = 1, page_size = 50 } = params;
+  let url = `/incidents?page=${page}&page_size=${page_size}`;
+  if (status) url += `&status=${status}`;
+  if (product_service) url += `&product_service=${encodeURIComponent(product_service)}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
 export const createIncident = async (data) => {
   const response = await api.post('/incidents', data);
   return response.data;

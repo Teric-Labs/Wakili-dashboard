@@ -58,7 +58,7 @@ import {
   Legend
 } from 'recharts';
 import Sidebar from '../Layout/Sidebar';
-import { createComplaint, updateComplaint, createIncident, updateIncident, getCaseTypeAnalytics, getFintechBreakdown, getDashboardOverview } from '../services/api';
+import { createComplaint, updateComplaint, createIncident, updateIncident, getComplaints, getIncidents, getCaseTypeAnalytics, getFintechBreakdown, getDashboardOverview } from '../services/api';
 
 // Mock trend data fallback
 const FALLBACK_CASE_TYPES = [
@@ -97,14 +97,23 @@ const ComplaintsPage = () => {
 
   const fetchBackendAnalytics = async () => {
     try {
-      const [caseTypesRes, fintechRes, overviewRes] = await Promise.all([
+      const [caseTypesRes, fintechRes, overviewRes, complaintsRes, incidentsRes] = await Promise.all([
         getCaseTypeAnalytics().catch(() => null),
         getFintechBreakdown().catch(() => null),
-        getDashboardOverview().catch(() => null)
+        getDashboardOverview().catch(() => null),
+        getComplaints().catch(() => null),
+        getIncidents().catch(() => null)
       ]);
       if (caseTypesRes) setMonthlyCaseTypeTrends(caseTypesRes);
       if (fintechRes) setFintechEntityBreakdown(fintechRes);
       if (overviewRes) setOverview(overviewRes);
+      // Populate complaint/incident tables from Firestore if backend has records
+      if (Array.isArray(complaintsRes) && complaintsRes.length > 0) {
+        setComplaints(complaintsRes);
+      }
+      if (Array.isArray(incidentsRes) && incidentsRes.length > 0) {
+        setIncidents(incidentsRes);
+      }
     } catch (e) {
       console.error("Backend analytics loading error:", e);
     }

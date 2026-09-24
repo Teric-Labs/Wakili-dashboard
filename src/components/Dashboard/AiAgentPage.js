@@ -46,7 +46,7 @@ import {
   Cell
 } from 'recharts';
 import Sidebar from '../Layout/Sidebar';
-import { getAiAgentOverview, getAiAgentIntentPrecision, getAiAgentSessions } from '../services/api';
+import { getAiAgentOverview, getAiAgentIntentPrecision, getAiAgentSessions, getAiAgentLanguages } from '../services/api';
 
 const FALLBACK_SESSIONS = [
   {
@@ -112,6 +112,13 @@ const AiAgentPage = () => {
   const [aiSessions, setAiSessions] = useState(FALLBACK_SESSIONS);
   const [intentAccuracyData, setIntentAccuracyData] = useState(FALLBACK_INTENTS);
   const [aiOverview, setAiOverview] = useState(null);
+  const [languageDistribution, setLanguageDistribution] = useState([
+    { language: 'Luganda', percentage: 48, color: 'primary' },
+    { language: 'English', percentage: 34, color: 'info' },
+    { language: 'Swahili', percentage: 12, color: 'warning' },
+    { language: 'Runyankole / Local Dialects', percentage: 6, color: 'secondary' }
+  ]);
+  const LANGUAGE_COLORS = ['primary', 'info', 'warning', 'secondary', 'success', 'error'];
 
   React.useEffect(() => {
     fetchBackendAiData();
@@ -120,14 +127,25 @@ const AiAgentPage = () => {
   const fetchBackendAiData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, intentsRes, sessionsRes] = await Promise.all([
+      const [overviewRes, intentsRes, sessionsRes, langRes] = await Promise.all([
         getAiAgentOverview().catch(() => null),
         getAiAgentIntentPrecision().catch(() => null),
-        getAiAgentSessions().catch(() => null)
+        getAiAgentSessions().catch(() => null),
+        getAiAgentLanguages().catch(() => null)
       ]);
       if (overviewRes) setAiOverview(overviewRes);
       if (intentsRes) setIntentAccuracyData(intentsRes);
       if (sessionsRes) setAiSessions(sessionsRes);
+      if (Array.isArray(langRes) && langRes.length > 0) {
+        const LANGUAGE_COLORS = ['primary', 'info', 'warning', 'secondary', 'success', 'error'];
+        setLanguageDistribution(
+          langRes.map((l, i) => ({
+            language: l.language,
+            percentage: l.percentage,
+            color: LANGUAGE_COLORS[i % LANGUAGE_COLORS.length]
+          }))
+        );
+      }
     } catch (e) {
       console.error("Backend AI fetch error:", e);
     } finally {
@@ -311,34 +329,15 @@ const AiAgentPage = () => {
                 CITIZEN LANGUAGE DISTRIBUTION
               </Typography>
               <Stack spacing={2}>
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                    <Typography variant="body2" fontWeight="700">Luganda</Typography>
-                    <Typography variant="body2" fontWeight="800" color="primary.main">48%</Typography>
-                  </Stack>
-                  <LinearProgress variant="determinate" value={48} sx={{ height: 8, borderRadius: 4 }} />
-                </Box>
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                    <Typography variant="body2" fontWeight="700">English</Typography>
-                    <Typography variant="body2" fontWeight="800" color="info.main">34%</Typography>
-                  </Stack>
-                  <LinearProgress variant="determinate" value={34} color="info" sx={{ height: 8, borderRadius: 4 }} />
-                </Box>
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                    <Typography variant="body2" fontWeight="700">Swahili</Typography>
-                    <Typography variant="body2" fontWeight="800" color="warning.main">12%</Typography>
-                  </Stack>
-                  <LinearProgress variant="determinate" value={12} color="warning" sx={{ height: 8, borderRadius: 4 }} />
-                </Box>
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                    <Typography variant="body2" fontWeight="700">Runyankole / Local Dialects</Typography>
-                    <Typography variant="body2" fontWeight="800" color="secondary.main">6%</Typography>
-                  </Stack>
-                  <LinearProgress variant="determinate" value={6} color="secondary" sx={{ height: 8, borderRadius: 4 }} />
-                </Box>
+                {languageDistribution.map((lang) => (
+                  <Box key={lang.language}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                      <Typography variant="body2" fontWeight="700">{lang.language}</Typography>
+                      <Typography variant="body2" fontWeight="800" color={`${lang.color}.main`}>{lang.percentage}%</Typography>
+                    </Stack>
+                    <LinearProgress variant="determinate" value={lang.percentage} color={lang.color} sx={{ height: 8, borderRadius: 4 }} />
+                  </Box>
+                ))}
               </Stack>
             </Card>
           </Grid>

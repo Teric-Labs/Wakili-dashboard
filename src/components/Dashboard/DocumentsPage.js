@@ -36,7 +36,7 @@ import {
   CloudDownload as PullsIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
-import { getDocuments, uploadDocument, deleteDocument, downloadDocument } from '../services/api';
+import { getDocuments, uploadDocument, deleteDocument, downloadDocument, getDocumentStats } from '../services/api';
 
 const FALLBACK_DOCUMENTS = [
   { id: 'doc-101', title: 'National Payment Systems Act 2020 (NPSA Directives)', category: 'legislation', file_size_mb: '4.2 MB', download_count: 842, upload_date: '2026-01-15' },
@@ -53,6 +53,7 @@ const DocumentsPage = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [openUpload, setOpenUpload] = useState(false);
+  const [docStats, setDocStats] = useState(null);
 
   // Menu state for actions
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -73,12 +74,16 @@ const DocumentsPage = () => {
   const fetchDocs = async () => {
     setLoading(true);
     try {
-      const res = await getDocuments({ category, search });
+      const [res, statsRes] = await Promise.all([
+        getDocuments({ category, search }).catch(() => null),
+        getDocumentStats().catch(() => null)
+      ]);
       if (res && res.documents && res.documents.length > 0) {
         setDocuments(res.documents);
       } else {
         setDocuments(FALLBACK_DOCUMENTS);
       }
+      if (statsRes) setDocStats(statsRes);
     } catch (err) {
       console.error("Error loading documents, using statutory defaults:", err);
       setDocuments(FALLBACK_DOCUMENTS);
@@ -224,7 +229,7 @@ const DocumentsPage = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="700">ACTIVE STATUTES</Typography>
-                <Typography variant="h5" fontWeight="900">{documents.length} Directives</Typography>
+                <Typography variant="h5" fontWeight="900">{(docStats?.total_documents ?? documents.length)} Directives</Typography>
               </Box>
             </Card>
           </Grid>
@@ -235,7 +240,7 @@ const DocumentsPage = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="700">ARCHIVE VOLUME</Typography>
-                <Typography variant="h5" fontWeight="900">17.1 MB</Typography>
+                <Typography variant="h5" fontWeight="900">{docStats?.total_size_mb ? `${docStats.total_size_mb} MB` : '17.1 MB'}</Typography>
               </Box>
             </Card>
           </Grid>
@@ -246,7 +251,11 @@ const DocumentsPage = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="700">REGULATORY PULLS</Typography>
-                <Typography variant="h5" fontWeight="900">3,417 Downloads</Typography>
+                <Typography variant="h5" fontWeight="900">
+                  {docStats?.most_downloaded
+                    ? `${docStats.most_downloaded.reduce((sum, d) => sum + (d.download_count || 0), 0).toLocaleString()} Downloads`
+                    : '3,417 Downloads'}
+                </Typography>
               </Box>
             </Card>
           </Grid>
