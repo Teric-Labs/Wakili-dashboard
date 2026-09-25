@@ -27,6 +27,7 @@ import {
   Tab,
   Menu,
   Avatar,
+  TablePagination,
   useTheme
 } from '@mui/material';
 import {
@@ -58,10 +59,9 @@ import {
   Legend
 } from 'recharts';
 import Sidebar from '../Layout/Sidebar';
-import { createComplaint, updateComplaint, createIncident, updateIncident, getComplaints, getIncidents, getCaseTypeAnalytics, getFintechBreakdown, getDashboardOverview } from '../services/api';
+import { createComplaint, updateComplaint, createIncident, updateIncident, getComplaints, getIncidents, getCaseTypeAnalytics, getFintechBreakdown } from '../services/api';
 
-// Mock trend data fallback
-const FALLBACK_CASE_TYPES = [
+const DEFAULT_CASE_TYPES = [
   { month: 'Jan', WrongNumber: 320, UnauthDebit: 120, AirtimeDeduction: 180, AgentDispute: 90 },
   { month: 'Feb', WrongNumber: 410, UnauthDebit: 210, AirtimeDeduction: 230, AgentDispute: 140 },
   { month: 'Mar', WrongNumber: 380, UnauthDebit: 190, AirtimeDeduction: 210, AgentDispute: 110 },
@@ -71,10 +71,10 @@ const FALLBACK_CASE_TYPES = [
   { month: 'Jul', WrongNumber: 740, UnauthDebit: 460, AirtimeDeduction: 350, AgentDispute: 250 },
   { month: 'Aug', WrongNumber: 710, UnauthDebit: 390, AirtimeDeduction: 320, AgentDispute: 210 },
   { month: 'Sep', WrongNumber: 650, UnauthDebit: 370, AirtimeDeduction: 290, AgentDispute: 190 },
-  { month: 'Oct', WrongNumber: 820, UnauthDebit: 510, AirtimeDeduction: 390, AgentDispute: 280 },
+  { month: 'Oct', WrongNumber: 820, UnauthDebit: 510, AirtimeDeduction: 390, AgentDispute: 280 }
 ];
 
-const FALLBACK_FINTECH_BREAKDOWN = [
+const DEFAULT_FINTECH_BREAKDOWN = [
   { entity: 'MTN MoMo', disputes: 4890, color: '#0284C7' },
   { entity: 'Airtel Money', disputes: 3420, color: '#10B981' },
   { entity: 'Centenary Bank', disputes: 1950, color: '#0F172A' },
@@ -87,9 +87,10 @@ const ComplaintsPage = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [monthlyCaseTypeTrends, setMonthlyCaseTypeTrends] = useState(FALLBACK_CASE_TYPES);
-  const [fintechEntityBreakdown, setFintechEntityBreakdown] = useState(FALLBACK_FINTECH_BREAKDOWN);
-  const [overview, setOverview] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [monthlyCaseTypeTrends, setMonthlyCaseTypeTrends] = useState(DEFAULT_CASE_TYPES);
+  const [fintechEntityBreakdown, setFintechEntityBreakdown] = useState(DEFAULT_FINTECH_BREAKDOWN);
 
   React.useEffect(() => {
     fetchBackendAnalytics();
@@ -97,23 +98,70 @@ const ComplaintsPage = () => {
 
   const fetchBackendAnalytics = async () => {
     try {
-      const [caseTypesRes, fintechRes, overviewRes, complaintsRes, incidentsRes] = await Promise.all([
+      const [caseTypesRes, fintechRes, complaintsRes, incidentsRes] = await Promise.all([
         getCaseTypeAnalytics().catch(() => null),
         getFintechBreakdown().catch(() => null),
-        getDashboardOverview().catch(() => null),
-        getComplaints().catch(() => null),
-        getIncidents().catch(() => null)
+        getComplaints().catch(() => []),
+        getIncidents().catch(() => [])
       ]);
-      if (caseTypesRes) setMonthlyCaseTypeTrends(caseTypesRes);
-      if (fintechRes) setFintechEntityBreakdown(fintechRes);
-      if (overviewRes) setOverview(overviewRes);
-      // Populate complaint/incident tables from Firestore
-      if (Array.isArray(complaintsRes)) {
-        setComplaints(complaintsRes);
+
+      const complaintsList = Array.isArray(complaintsRes) ? complaintsRes : [];
+      const incidentsList = Array.isArray(incidentsRes) ? incidentsRes : [];
+
+      setComplaints(complaintsList);
+      setIncidents(incidentsList);
+
+      // Compute dynamic Fintech entity breakdown from real records
+      const allList = [...complaintsList, ...incidentsList];
+      const entityMap = {};
+      const colors = ['#0284C7', '#10B981', '#0F172A', '#059669', '#64748B', '#F59E0B', '#EF4444'];
+      
+      allList.forEach((c) => {
+        const name = (c.company_name || c.product_service || 'Unspecified').trim();
+        entityMap[name] = (entityMap[name] || 0) + 1;
+      });
+
+      const dynamicBreakdown = Object.keys(entityMap).map((entity, i) => ({
+        entity,
+        disputes: entityMap[entity],
+        color: colors[i % colors.length]
+      })).sort((a, b) => b.disputes - a.disputes);
+
+      if (fintechRes && Array.isArray(fintechRes) && fintechRes.length > 0) {
+        setFintechEntityBreakdown(fintechRes);
+      } else if (dynamicBreakdown.length > 0) {
+        setFintechEntityBreakdown(dynamicBreakdown);
       }
-      if (Array.isArray(incidentsRes)) {
-        setIncidents(incidentsRes);
-      }
+
+      // Calculate dynamic DISPUTE VOLUME TRENDS BY CASE TYPE graph combining backend analytics and live Firestore records
+      const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+      const dynamicTrends = monthsList.map((m, idx) => {
+        const base = caseTypesRes && Array.isArray(caseTypesRes) && caseTypesRes[idx] ? caseTypesRes[idx] : {};
+        let wrong = base.WrongNumber || 10;
+        let unauth = base.UnauthDebit || 5;
+        let airtime = base.AirtimeDeduction || 8;
+        let agent = base.AgentDispute || 3;
+
+        if (m === 'Sep' || m === 'Oct') {
+          allList.forEach(c => {
+            const issue = (c.issue_type || c.case_type || '').toLowerCase();
+            if (issue.includes('wrong') || issue.includes('sent_money') || issue.includes('number')) wrong += 1;
+            else if (issue.includes('fraud') || issue.includes('security') || issue.includes('unauth')) unauth += 1;
+            else if (issue.includes('airtime') || issue.includes('data') || issue.includes('service')) airtime += 1;
+            else agent += 1;
+          });
+        }
+
+        return {
+          month: m,
+          WrongNumber: wrong,
+          UnauthDebit: unauth,
+          AirtimeDeduction: airtime,
+          AgentDispute: agent
+        };
+      });
+
+      setMonthlyCaseTypeTrends(dynamicTrends);
     } catch (e) {
       console.error("Backend analytics loading error:", e);
     }
@@ -260,13 +308,29 @@ const ComplaintsPage = () => {
     if (activeTab === 2) dataset = incidents;
 
     return dataset.filter(c => {
-      const matchesSearch = c.company_name?.toLowerCase().includes(search.toLowerCase()) ||
-        c.transaction_id?.toLowerCase().includes(search.toLowerCase()) ||
-        c.id?.toLowerCase().includes(search.toLowerCase());
+      if (!c) return false;
+      const searchLower = (search || '').toLowerCase();
+      const matchesSearch = !search ||
+        (c.company_name && c.company_name.toLowerCase().includes(searchLower)) ||
+        (c.transaction_id && c.transaction_id.toLowerCase().includes(searchLower)) ||
+        (c.id && c.id.toLowerCase().includes(searchLower)) ||
+        (c.description && c.description.toLowerCase().includes(searchLower));
       const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
       return matchesSearch && matchesStatus;
     });
   };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const filteredData = getFilteredData();
+  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -314,10 +378,10 @@ const ComplaintsPage = () => {
                     TOTAL CLAIMS LODGED
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {overview?.total_disputes?.toLocaleString() || complaints.length}
+                    {allCases.length.toLocaleString()}
                   </Typography>
                   <Typography variant="caption" color="success.main" fontWeight="700">
-                    {overview?.dispute_growth_pct || '+5.2%'} vs last month
+                    Live Database Records
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
@@ -335,10 +399,10 @@ const ComplaintsPage = () => {
                     SETTLEMENT RATE
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {overview?.resolution_rate_pct || '78.7%'}
+                    {allCases.length > 0 ? ((allCases.filter(c => (c.status || '').toLowerCase() === 'resolved').length / allCases.length) * 100).toFixed(1) + '%' : '0.0%'}
                   </Typography>
                   <Typography variant="caption" color="success.main" fontWeight="700">
-                    Avg 4.2 Days Resolution
+                    Real Settlement Rate
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
@@ -356,10 +420,10 @@ const ComplaintsPage = () => {
                     PENDING ARBITRATION
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {overview?.pending_review?.toLocaleString() || '1,930'}
+                    {allCases.filter(c => ['received', 'pending', 'reported', 'processing'].includes((c.status || '').toLowerCase())).length.toLocaleString()}
                   </Typography>
                   <Typography variant="caption" color="warning.main" fontWeight="700">
-                    Active Mediation Queue
+                    Active Queue
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
@@ -377,10 +441,10 @@ const ComplaintsPage = () => {
                     HIGH PRIORITY / FRAUD
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'error.main' }}>
-                    {overview?.high_priority_fraud?.toLocaleString() || '714'}
+                    {allCases.filter(c => (c.priority || '').toLowerCase() === 'high' || (c.case_type || '').toLowerCase().includes('fraud')).length.toLocaleString()}
                   </Typography>
                   <Typography variant="caption" color="error.main" fontWeight="700">
-                    SIM Swap / Security Alerts
+                    Security Alerts
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'rgba(239, 68, 68, 0.12)', color: 'error.main', width: 44, height: 44 }}>
@@ -518,7 +582,7 @@ const ComplaintsPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getFilteredData().length === 0 ? (
+                {filteredData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                       <Typography variant="body2" color="text.secondary">
@@ -527,7 +591,7 @@ const ComplaintsPage = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  getFilteredData().map((c) => (
+                  paginatedData.map((c) => (
                     <TableRow 
                       key={c.id} 
                       hover 
@@ -544,7 +608,7 @@ const ComplaintsPage = () => {
                         />
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{c.company_name || 'N/A'}</TableCell>
-                      <TableCell>{(c.issue_type || 'General Issue').toString().replace(/_/g, ' ')}</TableCell>
+                      <TableCell>{((c && c.issue_type) || 'General Issue').toString().replace(/_/g, ' ')}</TableCell>
                       <TableCell sx={{ fontFamily: 'monospace' }}>{c.transaction_id || 'N/A'}</TableCell>
                       <TableCell>
                         <Chip 
@@ -568,6 +632,16 @@ const ComplaintsPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={filteredData.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
 
           <Menu
             anchorEl={actionAnchor}

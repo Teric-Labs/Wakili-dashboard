@@ -18,9 +18,11 @@ import {
   DialogActions,
   Grid,
   MenuItem,
-  IconButton,
   Menu,
   LinearProgress,
+  Stack,
+  Avatar,
+  IconButton,
   useTheme
 } from '@mui/material';
 import {
@@ -37,14 +39,6 @@ import {
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
 import { getDocuments, uploadDocument, deleteDocument, downloadDocument, getDocumentStats } from '../services/api';
-
-const FALLBACK_DOCUMENTS = [
-  { id: 'doc-101', title: 'National Payment Systems Act 2020 (NPSA Directives)', category: 'legislation', file_size_mb: '4.2 MB', download_count: 842, upload_date: '2026-01-15' },
-  { id: 'doc-102', title: 'Consumer Financial Protection & Dispute Standard v2.4', category: 'regulations', file_size_mb: '1.8 MB', download_count: 615, upload_date: '2026-02-10' },
-  { id: 'doc-103', title: 'Fintech Mobile Wallet & USSD Instant Reversal Mandate', category: 'procedures', file_size_mb: '3.1 MB', download_count: 490, upload_date: '2026-03-01' },
-  { id: 'doc-104', title: 'Data Protection & Privacy Compliance Framework for PSPs', category: 'standards', file_size_mb: '5.6 MB', download_count: 320, upload_date: '2026-03-12' },
-  { id: 'doc-105', title: 'CTDRU Escalation Protocol & Arbitral Hearing Rules 2026', category: 'handbook', file_size_mb: '2.4 MB', download_count: 1150, upload_date: '2026-04-05' }
-];
 
 const DocumentsPage = () => {
   const theme = useTheme();
@@ -78,15 +72,14 @@ const DocumentsPage = () => {
         getDocuments({ category, search }).catch(() => null),
         getDocumentStats().catch(() => null)
       ]);
-      if (res && res.documents && res.documents.length > 0) {
+      if (res && Array.isArray(res.documents)) {
         setDocuments(res.documents);
-      } else {
-        setDocuments(FALLBACK_DOCUMENTS);
+      } else if (Array.isArray(res)) {
+        setDocuments(res);
       }
       if (statsRes) setDocStats(statsRes);
     } catch (err) {
-      console.error("Error loading documents, using statutory defaults:", err);
-      setDocuments(FALLBACK_DOCUMENTS);
+      console.error("Error loading documents:", err);
     } finally {
       setLoading(false);
     }
@@ -223,51 +216,88 @@ const DocumentsPage = () => {
         {/* Overview KPI Cards */}
         <Grid container spacing={2.5} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)', color: 'primary.main' }}>
-                <FolderIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">ACTIVE STATUTES</Typography>
-                <Typography variant="h5" fontWeight="900">{(docStats?.total_documents ?? documents.length)} Directives</Typography>
-              </Box>
+            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">
+                    ACTIVE STATUTES
+                  </Typography>
+                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
+                    {(docStats?.total_documents ?? documents.length)}
+                  </Typography>
+                  <Typography variant="caption" color="success.main" fontWeight="700">
+                    Directives Registered
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
+                  <FolderIcon fontSize="small" />
+                </Avatar>
+              </Stack>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(124, 58, 237, 0.1)', color: 'secondary.main' }}>
-                <StorageIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">ARCHIVE VOLUME</Typography>
-                <Typography variant="h5" fontWeight="900">{docStats?.total_size_mb ? `${docStats.total_size_mb} MB` : '17.1 MB'}</Typography>
-              </Box>
+            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">
+                    ARCHIVE VOLUME
+                  </Typography>
+                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
+                    {docStats?.total_size_mb ? `${docStats.total_size_mb} MB` : '17.1 MB'}
+                  </Typography>
+                  <Typography variant="caption" color="success.main" fontWeight="700">
+                    Encrypted Storage
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'rgba(139, 92, 246, 0.12)', color: 'secondary.main', width: 44, height: 44 }}>
+                  <StorageIcon fontSize="small" />
+                </Avatar>
+              </Stack>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(16, 185, 129, 0.1)', color: 'success.main' }}>
-                <PullsIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">REGULATORY PULLS</Typography>
-                <Typography variant="h5" fontWeight="900">
-                  {docStats?.most_downloaded
-                    ? `${docStats.most_downloaded.reduce((sum, d) => sum + (d.download_count || 0), 0).toLocaleString()} Downloads`
-                    : '3,417 Downloads'}
-                </Typography>
-              </Box>
+            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">
+                    REGULATORY PULLS
+                  </Typography>
+                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
+                    {docStats?.most_downloaded
+                      ? docStats.most_downloaded.reduce((sum, d) => sum + (d.download_count || 0), 0).toLocaleString()
+                      : '3,417'}
+                  </Typography>
+                  <Typography variant="caption" color="info.main" fontWeight="700">
+                    Total Downloads
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
+                  <PullsIcon fontSize="small" />
+                </Avatar>
+              </Stack>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2, height: '100%' }}>
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(217, 119, 6, 0.1)', color: 'warning.main' }}>
-                <ComplianceIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">COMPLIANCE INDEX</Typography>
-                <Typography variant="h5" fontWeight="900">100% Up-to-date</Typography>
-              </Box>
+            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">
+                    COMPLIANCE INDEX
+                  </Typography>
+                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'success.main' }}>
+                    100%
+                  </Typography>
+                  <Typography variant="caption" color="success.main" fontWeight="700">
+                    Up-to-date Directives
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
+                  <ComplianceIcon fontSize="small" />
+                </Avatar>
+              </Stack>
             </Card>
           </Grid>
         </Grid>

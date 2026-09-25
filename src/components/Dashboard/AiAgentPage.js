@@ -48,54 +48,7 @@ import {
 import Sidebar from '../Layout/Sidebar';
 import { getAiAgentOverview, getAiAgentIntentPrecision, getAiAgentSessions, getAiAgentLanguages } from '../services/api';
 
-const FALLBACK_SESSIONS = [
-  {
-    id: 'BOT-80921',
-    channel: 'Voice Call',
-    language: 'Luganda',
-    intent: 'wrong_number_transfer',
-    confidence: '98.4%',
-    sentiment: 'Positive',
-    duration: '2m 14s',
-    status: 'Auto-Resolved',
-    transcript: 'User: Nsindise efinia zange ku namba emkyamu. Wakilibot: Nsanyuse okukuyamba. Nkoze okusaba kwo okukwata ku kuddiza ssente ezo.'
-  },
-  {
-    id: 'BOT-80920',
-    channel: 'Text Chat',
-    language: 'English',
-    intent: 'fraud_sim_swap',
-    confidence: '96.2%',
-    sentiment: 'Urgent',
-    duration: '1m 45s',
-    status: 'Escalated to Officer',
-    transcript: 'User: My SIM card lost network and 800,000 UGX was withdrawn without OTP. Wakilibot: High-priority security incident logged. Connecting you to CTDRU Fraud Officer.'
-  },
-  {
-    id: 'BOT-80919',
-    channel: 'Voice Call',
-    language: 'Swahili',
-    intent: 'airtime_deduction',
-    confidence: '94.8%',
-    sentiment: 'Neutral',
-    duration: '3m 02s',
-    status: 'Auto-Resolved',
-    transcript: 'User: Salio langu la airtime limepungua bila sababu. Wakilibot: Tumepokea dai lako. Imesajiliwa namba ya kumbukumbu.'
-  },
-  {
-    id: 'BOT-80918',
-    channel: 'Text Chat',
-    language: 'English',
-    intent: 'agent_dispute',
-    confidence: '97.1%',
-    sentiment: 'Positive',
-    duration: '1m 12s',
-    status: 'Auto-Resolved',
-    transcript: 'User: Agent charged 5,000 extra fee. Wakilibot: Tariff violation registered under Mobile Money Agent Guidelines.'
-  }
-];
-
-const FALLBACK_INTENTS = [
+const DEFAULT_INTENTS = [
   { intent: 'Wrong Number Transfer', accuracy: 98.4, color: '#0284C7' },
   { intent: 'SIM Swap & Fraud', accuracy: 96.2, color: '#0F172A' },
   { intent: 'Airtime Deductions', accuracy: 94.8, color: '#10B981' },
@@ -109,8 +62,8 @@ const AiAgentPage = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [targetSession, setTargetSession] = useState(null);
 
-  const [aiSessions, setAiSessions] = useState(FALLBACK_SESSIONS);
-  const [intentAccuracyData, setIntentAccuracyData] = useState(FALLBACK_INTENTS);
+  const [aiSessions, setAiSessions] = useState([]);
+  const [intentAccuracyData, setIntentAccuracyData] = useState(DEFAULT_INTENTS);
   const [aiOverview, setAiOverview] = useState(null);
   const [languageDistribution, setLanguageDistribution] = useState([
     { language: 'Luganda', percentage: 48, color: 'primary' },
@@ -118,8 +71,6 @@ const AiAgentPage = () => {
     { language: 'Swahili', percentage: 12, color: 'warning' },
     { language: 'Runyankole / Local Dialects', percentage: 6, color: 'secondary' }
   ]);
-  const LANGUAGE_COLORS = ['primary', 'info', 'warning', 'secondary', 'success', 'error'];
-
   React.useEffect(() => {
     fetchBackendAiData();
   }, []);
@@ -363,39 +314,49 @@ const AiAgentPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {aiSessions.map((session) => (
-                  <TableRow 
-                    key={session.id} 
-                    hover 
-                    onClick={() => setSelectedSession(session)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell sx={{ fontWeight: 700 }}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        {session.channel === 'Voice Call' ? <VoiceIcon fontSize="small" color="primary" /> : <ChatIcon fontSize="small" color="info" />}
-                        <Typography variant="body2" fontWeight="700">{session.channel}</Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{session.language}</TableCell>
-                    <TableCell><Chip label={session.intent.replace(/_/g, ' ')} size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: 'success.main' }}>{session.confidence}</TableCell>
-                    <TableCell>{session.sentiment}</TableCell>
-                    <TableCell>{session.duration}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={session.status} 
-                        size="small" 
-                        color={session.status === 'Auto-Resolved' ? 'success' : 'error'} 
-                        sx={{ fontWeight: 800, fontSize: '0.65rem' }} 
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={(e) => handleOpenMenu(e, session)}>
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
+                {aiSessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No active AI agent sessions recorded.
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  aiSessions.map((session) => (
+                    <TableRow 
+                      key={session.id} 
+                      hover 
+                      onClick={() => setSelectedSession(session)}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          {session.channel === 'Voice Call' ? <VoiceIcon fontSize="small" color="primary" /> : <ChatIcon fontSize="small" color="info" />}
+                          <Typography variant="body2" fontWeight="700">{session.channel}</Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>{session.language}</TableCell>
+                      <TableCell><Chip label={(session.intent || 'General Inquiry').replace(/_/g, ' ')} size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'success.main' }}>{session.confidence}</TableCell>
+                      <TableCell>{session.sentiment}</TableCell>
+                      <TableCell>{session.duration}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={session.status} 
+                          size="small" 
+                          color={session.status === 'Auto-Resolved' ? 'success' : 'error'} 
+                          sx={{ fontWeight: 800, fontSize: '0.65rem' }} 
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" onClick={(e) => handleOpenMenu(e, session)}>
+                          <MoreVertIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>

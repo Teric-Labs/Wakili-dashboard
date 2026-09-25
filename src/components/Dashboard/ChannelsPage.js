@@ -42,43 +42,16 @@ import {
 import Sidebar from '../Layout/Sidebar';
 import { getChannelsOverview, getUssdLogs, getSmsLogs, getIvrLogs } from '../services/api';
 
-const FALLBACK_OVERVIEW = [
-  { name: 'USSD Gateway', type: 'USSD', volume: '24,810', share: '44%', latency: '180ms', status: 'ONLINE', successRate: '98.6%' },
-  { name: 'SMS Shortcode', type: 'SMS (8008 Toll-Free)', volume: '12,430', share: '22%', latency: '420ms', status: 'ONLINE', successRate: '99.2%' },
-  { name: 'IVR Voice Desk', type: 'Voice (0800-283-78)', volume: '9,540', share: '17%', latency: '95ms', status: 'ONLINE', successRate: '96.8%' },
-  { name: 'Mobile App', type: 'Android / iOS (v2.4)', volume: '5,890', share: '11%', latency: '140ms', status: 'ONLINE', successRate: '99.7%' },
-  { name: 'Public Web Portal', type: 'HTTPS (ctdru.ug)', volume: '3,420', share: '6%', latency: '110ms', status: 'ONLINE', successRate: '99.9%' }
-];
-
-const FALLBACK_USSD = [
-  { id: 'USD-90182', telco: 'MTN Uganda', code: 'USSD', steps: '4 / 4 Complete', duration: '34s', time: '2 mins ago', status: 'Submitted' },
-  { id: 'USD-90181', telco: 'Airtel Uganda', code: 'USSD', steps: '4 / 4 Complete', duration: '41s', time: '5 mins ago', status: 'Submitted' },
-  { id: 'USD-90180', telco: 'MTN Uganda', code: 'USSD', steps: '2 / 4 Abandoned', duration: '12s', time: '8 mins ago', status: 'Timed Out' },
-  { id: 'USD-90179', telco: 'Airtel Uganda', code: 'USSD', steps: '4 / 4 Complete', duration: '29s', time: '11 mins ago', status: 'Submitted' }
-];
-
-const FALLBACK_SMS = [
-  { id: 'SMS-4401', sender: '+256771***45', carrier: 'MTN', keyword: 'CLAIM', text: 'Transferred 300k to wrong person, ref TXN9012', status: 'Auto-Logged' },
-  { id: 'SMS-4402', sender: '+256701***99', carrier: 'Airtel', keyword: 'FRAUD', text: 'Airtime deducted without OTP code prompt', status: 'Auto-Logged' },
-  { id: 'SMS-4403', sender: '+256782***12', carrier: 'MTN', keyword: 'HELP', text: 'Agent charged extra fee for cash withdrawal', status: 'Auto-Logged' }
-];
-
-const FALLBACK_IVR = [
-  { id: 'IVR-8812', caller: '+256755***33', language: 'Luganda', duration: '3m 12s', waitTime: '14s', agent: 'Wakilibot AI', resolution: 'Case Created' },
-  { id: 'IVR-8811', caller: '+256772***88', language: 'English', duration: '4m 45s', waitTime: '22s', agent: 'Officer Kato', resolution: 'Escalated' },
-  { id: 'IVR-8810', caller: '+256703***11', language: 'Runyankole', duration: '2m 10s', waitTime: '8s', agent: 'Wakilibot AI', resolution: 'Info Provided' }
-];
-
 const ChannelsPage = () => {
   const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
 
-  const [channelOverview, setChannelOverview] = useState(FALLBACK_OVERVIEW);
-  const [ussdLogs, setUssdLogs] = useState(FALLBACK_USSD);
-  const [smsLogs, setSmsLogs] = useState(FALLBACK_SMS);
-  const [ivrLogs, setIvrLogs] = useState(FALLBACK_IVR);
+  const [channelOverview, setChannelOverview] = useState([]);
+  const [ussdLogs, setUssdLogs] = useState([]);
+  const [smsLogs, setSmsLogs] = useState([]);
+  const [ivrLogs, setIvrLogs] = useState([]);
 
   React.useEffect(() => {
     fetchBackendChannelsData();
@@ -173,10 +146,12 @@ const ChannelsPage = () => {
                     TOTAL INGEST VOLUME
                   </Typography>
                   <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    56,090
+                    {(Array.isArray(channelOverview) && channelOverview.length > 0
+                      ? channelOverview.reduce((acc, c) => acc + (parseInt((c.volume || '0').toString().replace(/,/g, ''), 10) || 0), 0)
+                      : (ussdLogs.length + smsLogs.length + ivrLogs.length)).toLocaleString()}
                   </Typography>
                   <Typography variant="caption" color="success.main" fontWeight="700">
-                    +12.4% vs last week
+                    Live Channel Operations
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>

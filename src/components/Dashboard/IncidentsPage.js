@@ -102,8 +102,13 @@ const IncidentsPage = () => {
   };
 
   const filteredIncidents = incidents.filter(i => {
-    const matchesSearch = i.product_service?.toLowerCase().includes(search.toLowerCase()) ||
-      i.transaction_id?.toLowerCase().includes(search.toLowerCase());
+    if (!i) return false;
+    const s = (search || '').toLowerCase();
+    const matchesSearch = !search ||
+      (i.product_service && i.product_service.toLowerCase().includes(s)) ||
+      (i.transaction_id && i.transaction_id.toLowerCase().includes(s)) ||
+      (i.incident_id && i.incident_id.toLowerCase().includes(s)) ||
+      (i.id && i.id.toLowerCase().includes(s));
     const matchesStatus = filterStatus === 'all' || i.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -169,25 +174,35 @@ const IncidentsPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredIncidents.map((i) => (
-                  <TableRow 
-                    key={i.incident_id} 
-                    hover 
-                    onClick={() => setSelectedIncident(i)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{i.incident_id}</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>{i.product_service}</TableCell>
-                    <TableCell>{i.incident_description}</TableCell>
-                    <TableCell>{i.transaction_id || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Chip label={i.status} size="small" color={getStatusColor(i.status)} sx={{ fontWeight: 700, textTransform: 'uppercase' }} />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button size="small" variant="outlined" color="error" sx={{ borderRadius: 2 }}>Inspect</Button>
+                {filteredIncidents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No security incidents registered matching filter.
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredIncidents.map((i) => (
+                    <TableRow 
+                      key={i.incident_id || i.id} 
+                      hover 
+                      onClick={() => setSelectedIncident(i)}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{i.incident_id || i.id}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{i.product_service || i.company_name || 'N/A'}</TableCell>
+                      <TableCell>{i.incident_description || i.description || 'No description provided'}</TableCell>
+                      <TableCell>{i.transaction_id || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Chip label={i.status || 'reported'} size="small" color={getStatusColor(i.status)} sx={{ fontWeight: 700, textTransform: 'uppercase' }} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button size="small" variant="outlined" color="error" sx={{ borderRadius: 2 }}>Inspect</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
