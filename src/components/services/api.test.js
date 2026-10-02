@@ -14,14 +14,15 @@ jest.mock('axios', () => {
 
 import axios from 'axios';
 import {
-  getDashboardStats,
-  getFarmInputs,
-  createFarmInput,
-  getAgriculturalInputOrders,
-  updateAgriculturalInputOrderStatus,
-  getSellOrders,
-  getFinancialServices,
-  getMarketInformation,
+  getDashboardOverview,
+  getComplaints,
+  createComplaint,
+  getIncidents,
+  getDocuments,
+  uploadDocument,
+  getAiAgentOverview,
+  getAuditLogs,
+  loginUser,
 } from './api';
 
 const mockAxiosInstance = axios.create();
@@ -30,95 +31,120 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe('dashboard endpoints', () => {
-  it('getDashboardStats calls GET /dashboard/stats and returns the data', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: { total_revenue: 1000 } });
+describe('dashboard telemetry endpoints', () => {
+  it('getDashboardOverview calls GET /dashboard/overview and returns the data', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { monthly_trends: [] } });
 
-    const result = await getDashboardStats();
+    const result = await getDashboardOverview();
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/dashboard/stats');
-    expect(result).toEqual({ total_revenue: 1000 });
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/dashboard/overview');
+    expect(result).toEqual({ monthly_trends: [] });
   });
 });
 
-describe('farm inputs endpoints', () => {
-  it('getFarmInputs calls GET /farm-inputs with params', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: [{ id: 1 }] });
-
-    const result = await getFarmInputs({ category: 'seeds' });
-
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/farm-inputs', { params: { category: 'seeds' } });
-    expect(result).toEqual([{ id: 1 }]);
-  });
-
-  it('createFarmInput calls POST /farm-inputs with the payload', async () => {
-    const payload = { name: 'Fertilizer' };
-    mockAxiosInstance.post.mockResolvedValueOnce({ data: { id: 1, ...payload } });
-
-    const result = await createFarmInput(payload);
-
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/farm-inputs', payload);
-    expect(result).toEqual({ id: 1, ...payload });
-  });
-});
-
-describe('agricultural input orders endpoints', () => {
-  it('getAgriculturalInputOrders calls GET /agricultural-input-orders', async () => {
+describe('complaints endpoints', () => {
+  it('getComplaints defaults to page 1 / page_size 50 with no filters', async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
 
-    const result = await getAgriculturalInputOrders();
+    await getComplaints();
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/agricultural-input-orders', { params: {} });
-    expect(result).toEqual([]);
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/complaints?page=1&page_size=50');
   });
 
-  it('updateAgriculturalInputOrderStatus calls PUT with the new status', async () => {
-    mockAxiosInstance.put.mockResolvedValueOnce({ data: { status: 'approved' } });
+  it('getComplaints appends status and company_name when provided', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
 
-    const result = await updateAgriculturalInputOrderStatus('ORD1', 'approved');
+    await getComplaints({ status: 'pending', company_name: 'Airtel Money' });
 
-    expect(mockAxiosInstance.put).toHaveBeenCalledWith(
-      '/agricultural-input-orders/ORD1/update-status',
-      { status: 'approved' }
+    const [url] = mockAxiosInstance.get.mock.calls[0];
+    expect(url).toContain('&status=pending');
+    expect(url).toContain('&company_name=Airtel%20Money');
+  });
+
+  it('createComplaint posts the payload to /complaints', async () => {
+    const payload = { company: 'MTN Mobile Money', description: 'Unauthorized deduction' };
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { complaint_id: 'c1', ...payload } });
+
+    const result = await createComplaint(payload);
+
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/complaints', payload);
+    expect(result).toEqual({ complaint_id: 'c1', ...payload });
+  });
+});
+
+describe('incidents endpoints', () => {
+  it('getIncidents calls GET /incidents with default pagination', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+
+    await getIncidents();
+
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/incidents?page=1&page_size=50');
+  });
+});
+
+describe('documents endpoints', () => {
+  it('getDocuments builds the query string with default sort params', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { documents: [] } });
+
+    await getDocuments();
+
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      '/documents?page=1&page_size=20&sort_by=upload_date&sort_order=desc'
     );
-    expect(result).toEqual({ status: 'approved' });
+  });
+
+  it('getDocuments appends category and search when provided', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { documents: [] } });
+
+    await getDocuments({ category: 'legislation', search: 'consumer protection' });
+
+    const [url] = mockAxiosInstance.get.mock.calls[0];
+    expect(url).toContain('&category=legislation');
+    expect(url).toContain('&search=consumer%20protection');
+  });
+
+  it('uploadDocument posts multipart form data to /documents/upload', async () => {
+    const formData = new FormData();
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { document_id: 'd1' } });
+
+    await uploadDocument(formData);
+
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/documents/upload',
+      formData,
+      expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } })
+    );
   });
 });
 
-describe('sell orders endpoints', () => {
-  it('getSellOrders calls GET /sell-orders', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
-
-    await getSellOrders();
-
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/sell-orders', { params: {} });
-  });
-});
-
-describe('financial services endpoints', () => {
-  it('getFinancialServices calls GET /financial-services', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
-
-    await getFinancialServices();
-
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/financial-services');
-  });
-});
-
-describe('market information endpoints', () => {
-  it('getMarketInformation calls GET with just the product name when no location is given', async () => {
+describe('AI insights endpoints', () => {
+  it('getAiAgentOverview calls GET /ai-agent/overview', async () => {
     mockAxiosInstance.get.mockResolvedValueOnce({ data: {} });
 
-    await getMarketInformation('maize');
+    await getAiAgentOverview();
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/market-information/maize');
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/ai-agent/overview');
   });
+});
 
-  it('getMarketInformation includes the location query param when given', async () => {
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: {} });
+describe('audit endpoints', () => {
+  it('getAuditLogs calls GET /audit/logs', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
 
-    await getMarketInformation('maize', 'kampala');
+    await getAuditLogs();
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/market-information/maize?location=kampala');
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/audit/logs');
+  });
+});
+
+describe('auth endpoints', () => {
+  it('loginUser posts credentials to /auth/login', async () => {
+    const credentials = { email: 'officer@ctdru.ug', password: 'secret' };
+    mockAxiosInstance.post.mockResolvedValueOnce({ data: { token: 'abc' } });
+
+    const result = await loginUser(credentials);
+
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/login', credentials);
+    expect(result).toEqual({ token: 'abc' });
   });
 });

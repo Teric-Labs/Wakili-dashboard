@@ -1,11 +1,16 @@
 import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import Homepage from './Homepage';
-import { getDashboardStats, getRecentOrders } from '../services/api';
+import { getComplaints, getIncidents, getDashboardOverview } from '../services/api';
 
+// Homepage renders a <Link> (react-router-dom), so it needs router context to mount at all.
 jest.mock('../services/api', () => ({
-  getDashboardStats: jest.fn(),
-  getRecentOrders: jest.fn(),
+  getComplaints: jest.fn(),
+  getIncidents: jest.fn(),
+  getDashboardOverview: jest.fn(),
 }));
+
+const renderHomepage = () => render(<Homepage />, { wrapper: MemoryRouter });
 
 describe('Homepage', () => {
   beforeEach(() => {
@@ -13,43 +18,54 @@ describe('Homepage', () => {
   });
 
   it('shows a loading indicator before data arrives', () => {
-    getDashboardStats.mockReturnValue(new Promise(() => {}));
-    getRecentOrders.mockReturnValue(new Promise(() => {}));
+    getComplaints.mockReturnValue(new Promise(() => {}));
+    getIncidents.mockReturnValue(new Promise(() => {}));
+    getDashboardOverview.mockReturnValue(new Promise(() => {}));
 
-    render(<Homepage />);
+    // The "Live Case Status Overview" card always renders three determinate
+    // LinearProgress bars regardless of loading state, so there are multiple
+    // role="progressbar" elements on screen - the top loading bar is the
+    // indeterminate one, found by its MUI variant class rather than role alone.
+    const { container } = renderHomepage();
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(container.querySelector('.MuiLinearProgress-indeterminate')).toBeInTheDocument();
   });
 
-  it('renders stats and recent orders once data resolves', async () => {
-    getDashboardStats.mockResolvedValue({
-      total_revenue: 5000,
-      financial_service_count: 3,
-      input_orders_count: 7,
-      sell_orders_count: 4,
-    });
-    getRecentOrders.mockResolvedValue({
-      recent_input_orders: [{ order_id: 'IN-1', status: 'pending' }],
-      recent_sell_orders: [{ order_id: 'SL-1', status: 'approved' }],
-    });
+  it('renders live totals and recent disputes once data resolves', async () => {
+    getComplaints.mockResolvedValue([
+      {
+        id: 'c1',
+        contact_details: '+256772345678',
+        company_name: 'Airtel Money',
+        issue_type: 'failed_withdrawal',
+        transaction_id: 'AM250912.4471.B78821',
+        status: 'received',
+        created_at: '2026-09-12T10:00:00Z',
+      },
+    ]);
+    getIncidents.mockResolvedValue([
+      { id: 'i1', contact_details: '+256700000000', company_name: 'MTN Mobile Money', status: 'resolved' },
+    ]);
+    getDashboardOverview.mockResolvedValue({ monthly_trends: [{ month: 'Jan', disputes: 5 }] });
 
-    render(<Homepage />);
+    renderHomepage();
 
-    expect(await screen.findByText('$5,000')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('4')).toBeInTheDocument();
-    expect(screen.getByText('Order ID: IN-1')).toBeInTheDocument();
-    expect(screen.getByText('Order ID: SL-1')).toBeInTheDocument();
+    expect(await screen.findByText('Airtel Money')).toBeInTheDocument();
+    expect(screen.getByText('MTN Mobile Money')).toBeInTheDocument();
+    expect(screen.getByText('AM250912.4471.B78821')).toBeInTheDocument();
+    // 2 total cases (1 complaint + 1 incident), 1 resolved
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('stops loading and shows defaults when the API calls fail', async () => {
-    getDashboardStats.mockRejectedValue(new Error('network error'));
-    getRecentOrders.mockRejectedValue(new Error('network error'));
+  it('stops loading and shows the empty state when the API calls fail', async () => {
+    getComplaints.mockRejectedValue(new Error('network error'));
+    getIncidents.mockRejectedValue(new Error('network error'));
+    getDashboardOverview.mockRejectedValue(new Error('network error'));
 
-    render(<Homepage />);
+    const { container } = renderHomepage();
 
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));
+    await waitForElementToBeRemoved(() => container.querySelector('.MuiLinearProgress-indeterminate'));
     expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+    expect(screen.getByText(/no complaints or incidents registered/i)).toBeInTheDocument();
   });
 });
