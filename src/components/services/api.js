@@ -9,6 +9,45 @@ const api = axios.create({
   },
 });
 
+const AUTH_STORAGE_KEY = 'ctdru_staff_auth';
+
+export const getStoredAuth = () => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const storeAuth = (authData) => {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+  } catch {
+    // Storage unavailable (e.g. private mode) - session just won't persist
+    // across a reload, same as if nothing were stored at all.
+  }
+};
+
+export const clearStoredAuth = () => {
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // no-op, see storeAuth
+  }
+};
+
+// Every dashboard endpoint is staff-only on the backend - attach the staff
+// Bearer token to every request rather than per-call, and clear the stored
+// session on a 401/403 so a stale/rejected token doesn't loop forever.
+api.interceptors.request.use((config) => {
+  const auth = getStoredAuth();
+  if (auth?.access_token) {
+    config.headers.Authorization = `Bearer ${auth.access_token}`;
+  }
+  return config;
+});
+
 // --- Dashboard Telemetry & Analytics ---
 export const getDashboardOverview = async () => {
   const response = await api.get('/dashboard/overview');
@@ -200,6 +239,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error.response || error.message);
+    if (error.response?.status === 401) {
+      clearStoredAuth();
+    }
     return Promise.reject(error);
   }
 );

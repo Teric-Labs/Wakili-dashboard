@@ -29,13 +29,14 @@ import {
   NotificationsOutlined as NotificationsIcon,
   SettingsOutlined as SettingsIcon,
   PersonOutline as ProfileIcon,
-  FiberManualRecord as PulseIcon
+  FiberManualRecord as PulseIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
 
 const sidebarWidth = 270;
 const SIDEBAR_DARK_BG = '#0F172A'; // Dark Slate Navy
 
-const Sidebar = () => {
+const Sidebar = ({ onLogout }) => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileAnchor, setProfileAnchor] = useState(null);
@@ -265,6 +266,13 @@ const Sidebar = () => {
           </MenuItem>
           <MenuItem onClick={() => setProfileAnchor(null)} sx={{ borderRadius: 0.5, fontSize: '0.85rem' }}>
             <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: '#38BDF8' }} /> System Preferences
+          </MenuItem>
+          <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.1)' }} />
+          <MenuItem
+            onClick={() => { setProfileAnchor(null); onLogout?.(); }}
+            sx={{ borderRadius: 0.5, fontSize: '0.85rem' }}
+          >
+            <LogoutIcon fontSize="small" sx={{ mr: 1.5, color: '#F87171' }} /> Sign out
           </MenuItem>
         </Menu>
       </Box>

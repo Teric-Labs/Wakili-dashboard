@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/Layout/MainLayout';
 import ComplaintsPage from './components/Dashboard/ComplaintsPage';
@@ -6,15 +6,27 @@ import ChannelsPage from './components/Dashboard/ChannelsPage';
 import DocumentsPage from './components/Dashboard/DocumentsPage';
 import AiAgentPage from './components/Dashboard/AiAgentPage';
 import AuditLogsPage from './components/Dashboard/AuditLogsPage';
+import LoginPage from './components/Auth/LoginPage';
+import { getStoredAuth, clearStoredAuth } from './components/services/api';
 import { ThemeModeProvider } from './theme/ThemeContext';
 
 function App() {
+  const [auth, setAuth] = useState(() => getStoredAuth());
+
+  if (!auth?.access_token) {
+    return (
+      <ThemeModeProvider>
+        <LoginPage onLogin={(user) => setAuth({ ...getStoredAuth(), user })} />
+      </ThemeModeProvider>
+    );
+  }
+
   return (
     <ThemeModeProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<MainLayout />} />
-          <Route path="/dashboard" element={<MainLayout />} />
+          <Route path="/" element={<MainLayout onLogout={() => { clearStoredAuth(); setAuth(null); }} />} />
+          <Route path="/dashboard" element={<MainLayout onLogout={() => { clearStoredAuth(); setAuth(null); }} />} />
           <Route path="/complaints" element={<ComplaintsPage />} />
           <Route path="/disputes" element={<ComplaintsPage />} />
           <Route path="/incidents" element={<ComplaintsPage />} />
