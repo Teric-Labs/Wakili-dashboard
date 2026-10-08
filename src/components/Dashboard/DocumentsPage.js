@@ -399,7 +399,7 @@ const DocumentsPage = () => {
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
               <Grid item xs={12}>
                 <Button variant="outlined" component="label" fullWidth sx={{ p: 3, borderStyle: 'dashed', borderRadius: 3 }}>
-                  {file ? file.name : "Select File (PDF, DOCX, TXT, RTF)"}
+                  {file ? file.name : "Select File (PDF, DOCX, PPTX, TXT, RTF)"}
                   <input type="file" hidden onChange={(e) => setFile(e.target.files[0])} />
                 </Button>
               </Grid>
