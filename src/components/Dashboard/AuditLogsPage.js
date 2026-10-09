@@ -14,7 +14,6 @@ import {
   Chip,
   Button,
   LinearProgress,
-  Avatar,
   TextField,
   IconButton,
   Menu,
@@ -32,6 +31,8 @@ import {
   LockReset as LockIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { getAuditLogs, getAuditOfficers, getAuditStats } from '../services/api';
 
 const AuditLogsPage = () => {
@@ -142,90 +143,54 @@ const AuditLogsPage = () => {
 
         {loading && <LinearProgress sx={{ mb: 3, borderRadius: 2, height: 4 }} />}
 
-        {/* 4 Summary Telemetry Cards */}
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    ACTIVE OFFICERS
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {safeRoster.length || 4}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Duty Analysts Online
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
-                  <ShieldIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Active officers"
+              value={auditStats?.active_officer_sessions ?? safeRoster.length}
+              hint={safeRoster.length ? 'From staff roster' : 'No officers synced yet'}
+              icon={<ShieldIcon fontSize="small" />}
+              accent={tokens.navy}
+              accentSoft="rgba(11, 31, 58, 0.08)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    AUDIT EVENTS (REALTIME)
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {safeLogs.length}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Verified Logged Actions
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <AuditIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Audit events"
+              value={(auditStats?.total_audit_events ?? safeLogs.length).toLocaleString()}
+              hint="Immutable action trail"
+              icon={<AuditIcon fontSize="small" />}
+              accent={tokens.success}
+              accentSoft="rgba(47, 107, 79, 0.12)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    RETENTION POLICY
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    7 Years
-                  </Typography>
-                  <Typography variant="caption" color="info.main" fontWeight="700">
-                    TLS 1.3 Immutable Vault
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(139, 92, 246, 0.12)', color: 'secondary.main', width: 44, height: 44 }}>
-                  <SecurityIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Retention"
+              value={auditStats?.audit_retention_period || '7 Years'}
+              hint="Policy retention window"
+              icon={<SecurityIcon fontSize="small" />}
+              accent={tokens.navyMid}
+              accentSoft="rgba(20, 52, 92, 0.1)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    SECURITY FLAGS
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'success.main' }}>
-                    {auditStats?.security_breaches_count ?? 0}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Zero Threats Detected
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <LockIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Security flags"
+              value={auditStats?.security_breaches_count ?? 0}
+              hint={
+                (auditStats?.security_breaches_count ?? 0) === 0
+                  ? 'No breach events logged'
+                  : `${auditStats?.security_events ?? 0} security-related events`
+              }
+              icon={<LockIcon fontSize="small" />}
+              accent={(auditStats?.security_breaches_count ?? 0) > 0 ? tokens.danger : tokens.gold}
+              accentSoft={
+                (auditStats?.security_breaches_count ?? 0) > 0
+                  ? 'rgba(155, 44, 44, 0.1)'
+                  : 'rgba(184, 134, 11, 0.12)'
+              }
+            />
           </Grid>
         </Grid>
 
@@ -237,26 +202,30 @@ const AuditLogsPage = () => {
                 CASE OFFICER ACTIVE ROSTER
               </Typography>
               <Stack spacing={2}>
-                {safeRoster.map((officer, idx) => (
-                  <Stack 
-                    key={officer.name || officer.officer_name || idx} 
-                    direction="row" 
-                    justifyContent="space-between" 
-                    alignItems="center"
-                    sx={{ p: 1.5, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
-                  >
-                    <Box>
-                      <Typography variant="body2" fontWeight="800">{officer.name || officer.officer_name || 'Officer'}</Typography>
-                      <Typography variant="caption" color="text.secondary">{officer.role || officer.department || 'Analyst'}</Typography>
-                    </Box>
-                    <Chip 
-                      label={`${officer.activeCases ?? officer.active_cases ?? 0} Cases`} 
-                      size="small" 
-                      color="primary" 
-                      sx={{ fontWeight: 800, fontSize: '0.68rem' }} 
-                    />
-                  </Stack>
-                ))}
+                {safeRoster.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">No officers in roster yet</Typography>
+                ) : (
+                  safeRoster.map((officer, idx) => (
+                    <Stack
+                      key={officer.name || officer.officer_name || idx}
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ p: 1.5, borderRadius: 1, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                    >
+                      <Box>
+                        <Typography variant="body2" fontWeight="700">{officer.name || officer.officer_name || 'Officer'}</Typography>
+                        <Typography variant="caption" color="text.secondary">{officer.role || officer.department || 'Staff'}</Typography>
+                      </Box>
+                      <Chip
+                        label={`${officer.activeCases ?? officer.active_cases ?? officer.assignedCases ?? 0} cases`}
+                        size="small"
+                        color="primary"
+                        sx={{ fontWeight: 700, fontSize: '0.68rem' }}
+                      />
+                    </Stack>
+                  ))
+                )}
               </Stack>
             </Card>
           </Grid>
@@ -290,19 +259,29 @@ const AuditLogsPage = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredLogs.map((log, idx) => (
-                      <TableRow key={log.id || idx} hover>
-                        <TableCell sx={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{log.timestamp || log.created_at || 'N/A'}</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>{log.officer || log.officer_name || log.user || log.actor || 'System'}</TableCell>
-                        <TableCell><Chip label={log.action || log.event || log.action_type || 'LOG'} size="small" color="primary" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.62rem' }} /></TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem' }}>{log.target || log.target_record || log.resource || log.details || 'N/A'}</TableCell>
-                        <TableCell align="right">
-                          <IconButton size="small" onClick={handleOpenMenu}>
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
+                    {filteredLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {search ? 'No audit entries match this filter' : 'No audit events recorded yet'}
+                          </Typography>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredLogs.map((log, idx) => (
+                        <TableRow key={log.id || idx} hover>
+                          <TableCell sx={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{log.timestamp || log.created_at || '—'}</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>{log.officer || log.officer_name || log.user || log.actor || 'System'}</TableCell>
+                          <TableCell><Chip label={log.action || log.event || log.action_type || 'LOG'} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700, fontSize: '0.62rem' }} /></TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem' }}>{log.target || log.target_record || log.resource || log.details || '—'}</TableCell>
+                          <TableCell align="right">
+                            <IconButton size="small" onClick={handleOpenMenu}>
+                              <MoreVertIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

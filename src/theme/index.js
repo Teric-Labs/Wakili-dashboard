@@ -1,83 +1,36 @@
 import { createTheme } from '@mui/material/styles';
+import { tokens, fonts } from './tokens';
 
+/** Fallback theme (App uses ThemeModeProvider). Kept for any direct imports. */
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2e7d32', // Green shade
-      light: '#60ad5e',
-      dark: '#005005',
-      contrastText: '#ffffff',
+      main: tokens.navy,
+      light: tokens.navyMid,
+      dark: '#061426',
+      contrastText: tokens.white,
     },
     secondary: {
-      main: '#ff8f00', // Amber shade
-      light: '#ffc046',
-      dark: '#c56000',
-      contrastText: '#000000',
+      main: tokens.gold,
+      light: tokens.goldSoft,
+      dark: '#8A6508',
+      contrastText: tokens.navy,
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: tokens.paper,
+      paper: tokens.paperElevated,
     },
   },
   typography: {
-    fontFamily: 'Poppins, Roboto, "Helvetica Neue", Arial, sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 600,
-    },
-    h3: {
-      fontWeight: 600,
-    },
-    h4: {
-      fontWeight: 600,
-    },
-    button: {
-      fontWeight: 600,
-    },
+    fontFamily: fonts.sans,
+    h1: { fontFamily: fonts.display, fontWeight: 600 },
+    h2: { fontFamily: fonts.display, fontWeight: 600 },
+    h3: { fontFamily: fonts.display, fontWeight: 600 },
+    h4: { fontFamily: fonts.display, fontWeight: 600 },
+    button: { fontWeight: 600, textTransform: 'none' },
   },
   shape: {
-    borderRadius: 12,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 600,
-          borderRadius: 8,
-          padding: '8px 20px',
-          boxShadow: 'none',
-        },
-        containedPrimary: {
-          '&:hover': {
-            boxShadow: '0px 4px 12px rgba(46, 125, 50, 0.2)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)',
-          transition: 'transform 0.3s, box-shadow 0.3s',
-          '&:hover': {
-            boxShadow: '0px 8px 30px rgba(0, 0, 0, 0.12)',
-            transform: 'translateY(-5px)',
-          },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        head: {
-          fontWeight: 600,
-          backgroundColor: '#f9f9f9',
-        },
-      },
-    },
+    borderRadius: 8,
   },
 });
 

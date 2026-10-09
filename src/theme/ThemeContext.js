@@ -1,15 +1,13 @@
 import React, { createContext, useState, useMemo } from 'react';
 import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
+import { tokens, fonts } from './tokens';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 /**
- * 3-COLOR CONSISTENT DESIGN SYSTEM:
- * 1. Primary: Navy/Ocean Blue (#0284C7 / #0F172A) - Headers, Primary Buttons, Active Items
- * 2. Secondary: Emerald Green (#10B981 / #059669) - Status Badges, Success Actions, Highlights
- * 3. Neutral Slate: Slate Neutral (#64748B / #E2E8F0 / #FFFFFF) - Cards, Borders, Subtext, Backgrounds
+ * Dashboard theme aligned with Wakilibot-web:
+ * navy primary, gold accent, paper backgrounds, Fraunces + Source Sans 3.
  */
-
 export const ThemeModeProvider = ({ children }) => {
   const [mode, setMode] = useState('light');
 
@@ -18,7 +16,7 @@ export const ThemeModeProvider = ({ children }) => {
       toggleColorMode: () => {
         setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
       },
-      mode
+      mode,
     }),
     [mode]
   );
@@ -27,64 +25,75 @@ export const ThemeModeProvider = ({ children }) => {
     () =>
       createTheme({
         palette: {
-          mode: 'light', // Pure crisp white theme default
+          mode: 'light',
           background: {
-            default: '#FFFFFF', // Pure White Body Background
-            paper: '#FFFFFF',   // White Card Surface
-            surface: '#F8FAFC'  // Very Subtle Slate Container
+            default: tokens.paper,
+            paper: tokens.paperElevated,
+            surface: tokens.sand,
           },
           primary: {
-            main: '#0284C7',    // Color 1: Primary Ocean Blue
-            light: '#38BDF8',
-            dark: '#0F172A',
-            contrastText: '#FFFFFF'
+            main: tokens.navy,
+            light: tokens.navyMid,
+            dark: '#061426',
+            contrastText: tokens.white,
           },
           secondary: {
-            main: '#10B981',    // Color 2: Emerald Green Accent
-            light: '#34D399',
-            dark: '#059669',
-            contrastText: '#FFFFFF'
+            main: tokens.gold,
+            light: tokens.goldSoft,
+            dark: '#8A6508',
+            contrastText: tokens.navy,
           },
           info: {
-            main: '#0284C7'
+            main: tokens.navyMid,
           },
           success: {
-            main: '#10B981',
-            light: '#34D399',
-            dark: '#059669'
+            main: tokens.success,
           },
           warning: {
-            main: '#0284C7'
+            main: tokens.gold,
           },
           error: {
-            main: '#0F172A'
+            main: tokens.danger,
           },
           text: {
-            primary: '#0F172A',   // Color 3 text: Dark Slate
-            secondary: '#64748B' // Color 3 subtext: Medium Slate
+            primary: tokens.navy,
+            secondary: tokens.muted,
           },
-          divider: '#E2E8F0'    // Clean Slate Border
+          divider: tokens.line,
         },
         typography: {
-          fontFamily: '"Public Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-          h4: { fontWeight: 900, letterSpacing: '-0.03em', color: '#0F172A' },
-          h5: { fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' },
-          h6: { fontWeight: 800, color: '#0F172A' },
-          subtitle1: { fontWeight: 700, color: '#0F172A' },
-          subtitle2: { fontWeight: 600, color: '#64748B' },
-          button: { fontWeight: 700, textTransform: 'none' }
+          fontFamily: fonts.sans,
+          h1: { fontFamily: fonts.display, fontWeight: 600, letterSpacing: '-0.02em', color: tokens.navy },
+          h2: { fontFamily: fonts.display, fontWeight: 600, letterSpacing: '-0.02em', color: tokens.navy },
+          h3: { fontFamily: fonts.display, fontWeight: 600, color: tokens.navy },
+          h4: { fontFamily: fonts.display, fontWeight: 600, letterSpacing: '-0.02em', color: tokens.navy },
+          h5: { fontFamily: fonts.display, fontWeight: 560, letterSpacing: '-0.02em', color: tokens.navy },
+          h6: { fontFamily: fonts.sans, fontWeight: 600, color: tokens.navy },
+          subtitle1: { fontWeight: 600, color: tokens.navy },
+          subtitle2: { fontWeight: 600, color: tokens.muted },
+          button: { fontFamily: fonts.sans, fontWeight: 600, textTransform: 'none' },
         },
         shape: {
-          borderRadius: 10
+          borderRadius: 8,
         },
         components: {
           MuiCssBaseline: {
             styleOverrides: {
+              ':root': {
+                '--navy': tokens.navy,
+                '--navy-mid': tokens.navyMid,
+                '--paper': tokens.paper,
+                '--sand': tokens.sand,
+                '--gold': tokens.gold,
+                '--muted': tokens.muted,
+                '--line': tokens.line,
+              },
               body: {
-                backgroundColor: '#FFFFFF',
-                color: '#0F172A'
-              }
-            }
+                backgroundColor: tokens.paper,
+                color: tokens.navy,
+                fontFamily: fonts.sans,
+              },
+            },
           },
           MuiButton: {
             styleOverrides: {
@@ -92,57 +101,75 @@ export const ThemeModeProvider = ({ children }) => {
                 borderRadius: 8,
                 padding: '8px 18px',
                 fontSize: '0.85rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 boxShadow: 'none',
                 textTransform: 'none',
                 '&:hover': {
-                  boxShadow: 'none'
-                }
+                  boxShadow: 'none',
+                },
               },
               containedPrimary: {
-                backgroundColor: '#0284C7',
-                color: '#FFFFFF',
+                backgroundColor: tokens.navy,
+                color: tokens.white,
                 '&:hover': {
-                  backgroundColor: '#0F172A'
-                }
+                  backgroundColor: tokens.navyMid,
+                },
               },
               containedSecondary: {
-                backgroundColor: '#10B981',
-                color: '#FFFFFF',
+                backgroundColor: tokens.gold,
+                color: tokens.navy,
                 '&:hover': {
-                  backgroundColor: '#059669'
-                }
-              }
-            }
+                  backgroundColor: tokens.goldSoft,
+                },
+              },
+            },
           },
           MuiCard: {
+            defaultProps: {
+              elevation: 0,
+            },
             styleOverrides: {
               root: {
-                borderRadius: 12,
-                backgroundColor: '#FFFFFF',
-                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
-                border: '1px solid #E2E8F0'
-              }
-            }
+                borderRadius: 8,
+                backgroundColor: tokens.paperElevated,
+                boxShadow: 'none',
+                border: `1px solid ${tokens.line}`,
+              },
+            },
+          },
+          MuiPaper: {
+            defaultProps: {
+              elevation: 0,
+            },
+            styleOverrides: {
+              root: {
+                backgroundImage: 'none',
+                boxShadow: 'none',
+              },
+              elevation1: { boxShadow: 'none' },
+              elevation2: { boxShadow: 'none' },
+              elevation3: { boxShadow: 'none' },
+              elevation4: { boxShadow: 'none' },
+            },
           },
           MuiTableCell: {
             styleOverrides: {
               root: {
                 padding: '14px 16px',
                 fontSize: '0.85rem',
-                borderColor: '#E2E8F0'
+                borderColor: tokens.line,
               },
               head: {
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
-                color: '#64748B',
-                backgroundColor: '#F8FAFC'
-              }
-            }
-          }
-        }
+                color: tokens.muted,
+                backgroundColor: tokens.sand,
+              },
+            },
+          },
+        },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode]

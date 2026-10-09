@@ -20,8 +20,6 @@ import {
   MenuItem,
   Menu,
   LinearProgress,
-  Stack,
-  Avatar,
   IconButton,
   useTheme
 } from '@mui/material';
@@ -38,6 +36,8 @@ import {
   CloudDownload as PullsIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { getDocuments, uploadDocument, deleteDocument, downloadDocument, getDocumentStats } from '../services/api';
 
 const DocumentsPage = () => {
@@ -205,106 +205,74 @@ const DocumentsPage = () => {
             color="primary"
             startIcon={<UploadIcon />}
             onClick={() => setOpenUpload(true)}
-            sx={{ 
-              borderRadius: 2.5, 
-              px: 3, 
+            sx={{
+              borderRadius: 2,
+              px: 3,
               py: 1.2,
-              fontWeight: 800,
-              boxShadow: '0 4px 15px rgba(2, 132, 199, 0.3)'
+              fontWeight: 700,
+              boxShadow: 'none',
             }}
           >
             Upload Legal Document
           </Button>
         </Box>
 
-        {/* Overview KPI Cards */}
-        <Grid container spacing={2.5} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    ACTIVE STATUTES
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {(docStats?.total_documents ?? documents.length)}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Directives Registered
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
-                  <FolderIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    ARCHIVE VOLUME
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {docStats?.total_size_mb ? `${docStats.total_size_mb} MB` : '17.1 MB'}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Encrypted Storage
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(139, 92, 246, 0.12)', color: 'secondary.main', width: 44, height: 44 }}>
-                  <StorageIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    REGULATORY PULLS
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {docStats?.most_downloaded
-                      ? docStats.most_downloaded.reduce((sum, d) => sum + (d.download_count || 0), 0).toLocaleString()
-                      : '3,417'}
-                  </Typography>
-                  <Typography variant="caption" color="info.main" fontWeight="700">
-                    Total Downloads
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <PullsIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    COMPLIANCE INDEX
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'success.main' }}>
-                    100%
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Up-to-date Directives
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
-                  <ComplianceIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-        </Grid>
+        {(() => {
+          const totalDocs = docStats?.total_documents ?? documents.length;
+          const sizeMb = docStats?.total_size_mb;
+          const downloads = Array.isArray(docStats?.most_downloaded)
+            ? docStats.most_downloaded.reduce((sum, d) => sum + (d.download_count || 0), 0)
+            : documents.reduce((sum, d) => sum + (d.download_count || 0), 0);
+          const categoryCount = docStats?.documents_by_category
+            ? Object.keys(docStats.documents_by_category).length
+            : new Set(
+                (documents || []).map((d) => (d.category || '').toString().trim()).filter(Boolean)
+              ).size;
+          return (
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Documents"
+                  value={Number(totalDocs).toLocaleString()}
+                  hint="Registered in the archive"
+                  icon={<FolderIcon fontSize="small" />}
+                  accent={tokens.navy}
+                  accentSoft="rgba(11, 31, 58, 0.08)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Archive volume"
+                  value={sizeMb != null ? `${sizeMb} MB` : '0 MB'}
+                  hint="Stored file size"
+                  icon={<StorageIcon fontSize="small" />}
+                  accent={tokens.navyMid}
+                  accentSoft="rgba(20, 52, 92, 0.1)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Downloads"
+                  value={Number(downloads).toLocaleString()}
+                  hint="Cumulative pull count"
+                  icon={<PullsIcon fontSize="small" />}
+                  accent={tokens.success}
+                  accentSoft="rgba(47, 107, 79, 0.12)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Categories"
+                  value={categoryCount}
+                  hint={totalDocs ? 'Distinct archive categories' : 'No documents yet'}
+                  icon={<ComplianceIcon fontSize="small" />}
+                  accent={tokens.gold}
+                  accentSoft="rgba(184, 134, 11, 0.12)"
+                />
+              </Grid>
+            </Grid>
+          );
+        })()}
 
         {loading && <LinearProgress sx={{ mb: 4, borderRadius: 3, height: 6 }} />}
 

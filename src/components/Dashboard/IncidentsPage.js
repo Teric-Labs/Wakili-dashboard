@@ -28,9 +28,15 @@ import {
   Add as AddIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Report as ReportIcon,
+  HourglassEmpty as OpenIcon,
+  CheckCircle as ResolvedIcon,
+  PriorityHigh as PriorityIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { createIncident, updateIncident, getIncidents } from '../services/api';
 
 const IncidentsPage = () => {
@@ -131,11 +137,64 @@ const IncidentsPage = () => {
             color="error"
             startIcon={<AddIcon />}
             onClick={() => setOpenCreate(true)}
-            sx={{ borderRadius: 3, px: 3, fontWeight: 'bold', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' }}
+            sx={{ borderRadius: 2, px: 3, fontWeight: 'bold' }}
           >
             Report Security Incident
           </Button>
         </Box>
+
+        {(() => {
+          const open = incidents.filter((i) => {
+            const st = (i.status || '').toLowerCase();
+            return st !== 'resolved' && st !== 'canceled' && st !== 'closed';
+          }).length;
+          const resolved = incidents.filter((i) => (i.status || '').toLowerCase() === 'resolved').length;
+          const investigating = incidents.filter((i) => (i.status || '').toLowerCase() === 'investigating').length;
+          return (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Total incidents"
+                  value={incidents.length.toLocaleString()}
+                  hint="Fraud & security desk register"
+                  icon={<ReportIcon fontSize="small" />}
+                  accent={tokens.navy}
+                  accentSoft="rgba(11, 31, 58, 0.08)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Open"
+                  value={open.toLocaleString()}
+                  hint="Awaiting investigation or action"
+                  icon={<OpenIcon fontSize="small" />}
+                  accent={tokens.gold}
+                  accentSoft="rgba(184, 134, 11, 0.12)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Investigating"
+                  value={investigating.toLocaleString()}
+                  hint="Active officer review"
+                  icon={<PriorityIcon fontSize="small" />}
+                  accent={tokens.danger}
+                  accentSoft="rgba(155, 44, 44, 0.1)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Resolved"
+                  value={resolved.toLocaleString()}
+                  hint="Closed security cases"
+                  icon={<ResolvedIcon fontSize="small" />}
+                  accent={tokens.success}
+                  accentSoft="rgba(47, 107, 79, 0.12)"
+                />
+              </Grid>
+            </Grid>
+          );
+        })()}
 
         <Card sx={{ p: 3 }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }} justifyContent="space-between">

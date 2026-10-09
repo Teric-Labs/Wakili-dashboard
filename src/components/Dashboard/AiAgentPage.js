@@ -46,14 +46,9 @@ import {
   Cell
 } from 'recharts';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { getAiAgentOverview, getAiAgentIntentPrecision, getAiAgentSessions, getAiAgentLanguages } from '../services/api';
-
-const DEFAULT_INTENTS = [
-  { intent: 'Wrong Number Transfer', accuracy: 98.4, color: '#0284C7' },
-  { intent: 'SIM Swap & Fraud', accuracy: 96.2, color: '#0F172A' },
-  { intent: 'Airtime Deductions', accuracy: 94.8, color: '#10B981' },
-  { intent: 'Agent Tariff Dispute', accuracy: 97.1, color: '#64748B' }
-];
 
 const AiAgentPage = () => {
   const theme = useTheme();
@@ -63,14 +58,9 @@ const AiAgentPage = () => {
   const [targetSession, setTargetSession] = useState(null);
 
   const [aiSessions, setAiSessions] = useState([]);
-  const [intentAccuracyData, setIntentAccuracyData] = useState(DEFAULT_INTENTS);
+  const [intentAccuracyData, setIntentAccuracyData] = useState([]);
   const [aiOverview, setAiOverview] = useState(null);
-  const [languageDistribution, setLanguageDistribution] = useState([
-    { language: 'Luganda', percentage: 48, color: 'primary' },
-    { language: 'English', percentage: 34, color: 'info' },
-    { language: 'Swahili', percentage: 12, color: 'warning' },
-    { language: 'Runyankole / Local Dialects', percentage: 6, color: 'secondary' }
-  ]);
+  const [languageDistribution, setLanguageDistribution] = useState([]);
   React.useEffect(() => {
     fetchBackendAiData();
   }, []);
@@ -84,9 +74,9 @@ const AiAgentPage = () => {
         getAiAgentSessions().catch(() => null),
         getAiAgentLanguages().catch(() => null)
       ]);
-      if (overviewRes) setAiOverview(overviewRes);
-      if (intentsRes) setIntentAccuracyData(intentsRes);
-      if (sessionsRes) setAiSessions(sessionsRes);
+      setAiOverview(overviewRes);
+      setIntentAccuracyData(Array.isArray(intentsRes) ? intentsRes : []);
+      setAiSessions(Array.isArray(sessionsRes) ? sessionsRes : []);
       if (Array.isArray(langRes) && langRes.length > 0) {
         const LANGUAGE_COLORS = ['primary', 'info', 'warning', 'secondary', 'success', 'error'];
         setLanguageDistribution(
@@ -96,6 +86,8 @@ const AiAgentPage = () => {
             color: LANGUAGE_COLORS[i % LANGUAGE_COLORS.length]
           }))
         );
+      } else {
+        setLanguageDistribution([]);
       }
     } catch (e) {
       console.error("Backend AI fetch error:", e);
@@ -154,90 +146,46 @@ const AiAgentPage = () => {
 
         {loading && <LinearProgress sx={{ mb: 3, borderRadius: 2, height: 4 }} />}
 
-        {/* 4 Summary Telemetry Cards */}
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    AI RESOLUTION RATE
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'success.main' }}>
-                    {aiOverview?.ai_resolution_rate || '84.2%'}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    {aiOverview?.human_escalation_rate || '15.8%'} Escalated to Human
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <CheckIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="AI resolution rate"
+              value={aiOverview?.ai_resolution_rate || '0%'}
+              hint={`${aiOverview?.human_escalation_rate || '0%'} escalated to officers`}
+              icon={<CheckIcon fontSize="small" />}
+              accent={tokens.success}
+              accentSoft="rgba(47, 107, 79, 0.12)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    NLP INTENT CONFIDENCE
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {aiOverview?.nlp_intent_confidence || '96.8%'}
-                  </Typography>
-                  <Typography variant="caption" color="info.main" fontWeight="700">
-                    {aiOverview?.languages_supported_count || 4} Languages Supported
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
-                  <IntentIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Sessions tracked"
+              value={Number(aiOverview?.total_sessions ?? aiSessions.length).toLocaleString()}
+              hint={`${aiOverview?.languages_supported_count || languageDistribution.length || 0} languages seen`}
+              icon={<IntentIcon fontSize="small" />}
+              accent={tokens.navy}
+              accentSoft="rgba(11, 31, 58, 0.08)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    VOICE CHAT SESSIONS
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {aiOverview?.voice_chat_sessions_count?.toLocaleString() || '18,920'}
-                  </Typography>
-                  <Typography variant="caption" color="primary.main" fontWeight="700">
-                    Luganda & English Top
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(139, 92, 246, 0.12)', color: 'secondary.main', width: 44, height: 44 }}>
-                  <VoiceIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Voice sessions"
+              value={Number(aiOverview?.voice_chat_sessions_count || 0).toLocaleString()}
+              hint="IVR / voice channel sessions"
+              icon={<VoiceIcon fontSize="small" />}
+              accent={tokens.navyMid}
+              accentSoft="rgba(20, 52, 92, 0.1)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    AVG BOT RESPONSE TIME
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {aiOverview?.avg_response_time || '0.8 sec'}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Sub-second Latency
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
-                  <TrendingIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Avg response time"
+              value={aiOverview?.avg_response_time || '—'}
+              hint="From live conversation telemetry"
+              icon={<TrendingIcon fontSize="small" />}
+              accent={tokens.gold}
+              accentSoft="rgba(184, 134, 11, 0.12)"
+            />
           </Grid>
         </Grid>
 
@@ -245,50 +193,64 @@ const AiAgentPage = () => {
         <Grid container spacing={2.5} sx={{ mb: 3 }}>
           <Grid item xs={12} md={8}>
             <Card sx={{ p: 3 }}>
-              <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 1 }}>
-                INTENT CLASSIFICATION PRECISION BY DISPUTE CATEGORY
+              <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 1 }}>
+                Intent resolution by category
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                Evaluation metrics for Wakilibot zero-shot intent classifier
+                % of sessions auto-resolved per intent from live conversations
               </Typography>
               <Box sx={{ width: '100%', height: 240 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={intentAccuracyData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                    <XAxis type="number" domain={[0, 100]} stroke={theme.palette.text.secondary} fontSize={11} />
-                    <YAxis dataKey="intent" type="category" stroke={theme.palette.text.secondary} fontSize={11} width={130} />
-                    <ChartTooltip 
-                      contentStyle={{ 
-                        backgroundColor: theme.palette.background.paper, 
-                        borderColor: theme.palette.divider,
-                        borderRadius: 8
-                      }} 
-                    />
-                    <Bar dataKey="accuracy" radius={[0, 6, 6, 0]}>
-                      {intentAccuracyData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {intentAccuracyData.length === 0 ? (
+                  <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">No session intent data yet</Typography>
+                  </Box>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={intentAccuracyData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                      <XAxis type="number" domain={[0, 100]} stroke={theme.palette.text.secondary} fontSize={11} />
+                      <YAxis dataKey="intent" type="category" stroke={theme.palette.text.secondary} fontSize={11} width={130} />
+                      <ChartTooltip
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          borderColor: theme.palette.divider,
+                          borderRadius: 8,
+                        }}
+                      />
+                      <Bar dataKey="accuracy" radius={[0, 4, 4, 0]}>
+                        {intentAccuracyData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || tokens.navy} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </Box>
             </Card>
           </Grid>
 
           <Grid item xs={12} md={4}>
             <Card sx={{ p: 3, height: '100%' }}>
-              <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 2 }}>
-                CITIZEN LANGUAGE DISTRIBUTION
+              <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 2 }}>
+                Language distribution
               </Typography>
               <Stack spacing={2}>
-                {languageDistribution.map((lang) => (
-                  <Box key={lang.language}>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">{lang.language}</Typography>
-                      <Typography variant="body2" fontWeight="800" color={`${lang.color}.main`}>{lang.percentage}%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={lang.percentage} color={lang.color} sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
-                ))}
+                {languageDistribution.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">No language data yet</Typography>
+                ) : (
+                  languageDistribution.map((lang) => (
+                    <Box key={lang.language}>
+                      <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                        <Typography variant="body2" fontWeight="600">{lang.language}</Typography>
+                        <Typography variant="body2" fontWeight="700" sx={{ color: tokens.navy }}>{lang.percentage}%</Typography>
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={lang.percentage}
+                        sx={{ height: 7, borderRadius: 1, bgcolor: tokens.sand, '& .MuiLinearProgress-bar': { bgcolor: tokens.navy } }}
+                      />
+                    </Box>
+                  ))
+                )}
               </Stack>
             </Card>
           </Grid>
@@ -296,8 +258,8 @@ const AiAgentPage = () => {
 
         {/* AI Conversation Sessions Stream Table */}
         <Card sx={{ p: 3 }}>
-          <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 2 }}>
-            REAL-TIME WAKILIBOT SESSION STREAM
+          <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 2 }}>
+            Recent Wakilibot sessions
           </Typography>
           <TableContainer>
             <Table size="small">

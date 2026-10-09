@@ -22,19 +22,23 @@ import {
   Gavel as ComplaintsIcon,
   FolderSpecial as DocumentsIcon,
   Dashboard as DashboardIcon,
-  Shield as ShieldIcon,
   Phonelink as ChannelsIcon,
   SmartToy as AiAgentIcon,
   VerifiedUser as AuditIcon,
   NotificationsOutlined as NotificationsIcon,
   SettingsOutlined as SettingsIcon,
   PersonOutline as ProfileIcon,
-  FiberManualRecord as PulseIcon,
   Logout as LogoutIcon
 } from '@mui/icons-material';
+import CtdruMark from '../Brand/CtdruMark';
+import { tokens } from '../../theme/tokens';
+import ctdruLogo from '../../assets/logo/cropped-CTDR-U-Logo-1-150x150.png';
 
 const sidebarWidth = 270;
-const SIDEBAR_DARK_BG = '#0F172A'; // Dark Slate Navy
+const SIDEBAR_DARK_BG = tokens.navy;
+const ACCENT = tokens.goldSoft;
+const MUTED = 'rgba(247, 244, 239, 0.55)';
+const NAV_IDLE = 'rgba(247, 244, 239, 0.72)';
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
@@ -60,59 +64,24 @@ const Sidebar = ({ onLogout }) => {
           alignItems: 'center', 
           gap: 1.5, 
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          bgcolor: '#0B132B'
+          bgcolor: '#061426'
         }}
       >
-        <Avatar 
-          sx={{ 
-            bgcolor: '#0284C7', 
-            color: '#FFFFFF',
-            fontWeight: 900,
-            width: 40,
-            height: 40,
-            borderRadius: 1
-          }}
-        >
-          <ShieldIcon sx={{ fontSize: 22 }} />
-        </Avatar>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography 
-            variant="subtitle1" 
-            fontWeight="900" 
-            sx={{ 
-              lineHeight: 1.15, 
-              letterSpacing: '-0.02em',
-              fontSize: '0.95rem',
-              color: '#FFFFFF'
-            }}
-          >
-            CTDRU PORTAL
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, fontSize: '0.68rem' }}>
-            Consumer Protection HQ
-          </Typography>
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <CtdruMark
+            size={40}
+            inverted
+            title="CTDRU PORTAL"
+            subtitle="Consumer Protection HQ"
+          />
         </Box>
-        <Chip 
-          icon={<PulseIcon style={{ color: '#10B981', fontSize: 8 }} />} 
-          label="LIVE" 
-          variant="outlined" 
-          size="small"
-          sx={{ 
-            borderRadius: '2px', 
-            fontWeight: 800, 
-            height: 20,
-            fontSize: '0.65rem',
-            borderColor: '#10B981',
-            color: '#10B981'
-          }}
-        />
       </Box>
 
       {/* Navigation List */}
       <Box sx={{ py: 2, flexGrow: 1 }}>
         <Typography 
           variant="caption" 
-          sx={{ textTransform: 'uppercase', letterSpacing: 1.1, fontSize: '0.65rem', px: 2.5, mb: 1.5, display: 'block', color: '#64748B', fontWeight: 800 }}
+          sx={{ textTransform: 'uppercase', letterSpacing: 1.1, fontSize: '0.65rem', px: 2.5, mb: 1.5, display: 'block', color: MUTED, fontWeight: 800 }}
         >
           MAIN MENU
         </Typography>
@@ -131,25 +100,25 @@ const Sidebar = ({ onLogout }) => {
                     py: 1.25,
                     px: 2.5,
                     transition: 'none',
-                    borderLeft: isSelected ? '4px solid #38BDF8' : '4px solid transparent',
-                    backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
+                    borderLeft: isSelected ? `4px solid ${ACCENT}` : '4px solid transparent',
+                    backgroundColor: isSelected ? 'rgba(212, 168, 75, 0.12)' : 'transparent',
                     '&.Mui-selected': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.07)'
+                      backgroundColor: 'rgba(212, 168, 75, 0.12)'
                     },
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.04)'
                     }
                   }}
                 >
-                  <ListItemIcon sx={{ color: isSelected ? '#38BDF8' : '#94A3B8', minWidth: 32 }}>
+                  <ListItemIcon sx={{ color: isSelected ? ACCENT : MUTED, minWidth: 32 }}>
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText 
                     primary={item.text} 
                     primaryTypographyProps={{ 
                       fontSize: '0.85rem', 
-                      fontWeight: isSelected ? 800 : 500,
-                      color: isSelected ? '#FFFFFF' : '#CBD5E1'
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? tokens.white : NAV_IDLE
                     }} 
                   />
                 </ListItemButton>
@@ -160,10 +129,10 @@ const Sidebar = ({ onLogout }) => {
       </Box>
 
       {/* System Controls (Vertical Layout) */}
-      <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', bgcolor: '#0B132B' }}>
+      <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', bgcolor: '#061426' }}>
         <Typography 
           variant="caption" 
-          sx={{ textTransform: 'uppercase', letterSpacing: 1.1, fontSize: '0.65rem', px: 1, mb: 1, display: 'block', color: '#64748B', fontWeight: 800 }}
+          sx={{ textTransform: 'uppercase', letterSpacing: 1.1, fontSize: '0.65rem', px: 1, mb: 1, display: 'block', color: MUTED, fontWeight: 800 }}
         >
           SYSTEM CONTROLS
         </Typography>
@@ -181,14 +150,14 @@ const Sidebar = ({ onLogout }) => {
                 }
               }}
             >
-              <ListItemIcon sx={{ color: '#94A3B8', minWidth: 32 }}>
+              <ListItemIcon sx={{ color: MUTED, minWidth: 32 }}>
                 <Badge badgeContent={3} color="error" variant="dot">
                   <NotificationsIcon fontSize="small" />
                 </Badge>
               </ListItemIcon>
               <ListItemText 
                 primary="Notifications" 
-                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: '#CBD5E1' }} 
+                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: NAV_IDLE }} 
               />
               <Chip label="3 New" size="small" color="error" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, borderRadius: 0.5 }} />
             </ListItemButton>
@@ -206,12 +175,12 @@ const Sidebar = ({ onLogout }) => {
                 }
               }}
             >
-              <ListItemIcon sx={{ color: '#94A3B8', minWidth: 32 }}>
+              <ListItemIcon sx={{ color: MUTED, minWidth: 32 }}>
                 <SettingsIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText 
                 primary="System Settings" 
-                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: '#CBD5E1' }} 
+                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: NAV_IDLE }} 
               />
             </ListItemButton>
           </ListItem>
@@ -235,15 +204,14 @@ const Sidebar = ({ onLogout }) => {
             }
           }}
         >
-          <Avatar sx={{ width: 36, height: 36, fontSize: '0.8rem', fontWeight: 800, bgcolor: '#0284C7', color: '#FFFFFF', borderRadius: 1 }}>
-            CT
-          </Avatar>
+          <Avatar
+            src={ctdruLogo}
+            alt="CTDRU"
+            sx={{ width: 36, height: 36, bgcolor: tokens.white, borderRadius: 1 }}
+          />
           <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
             <Typography variant="caption" fontWeight="700" noWrap display="block" sx={{ color: '#FFFFFF' }}>
               CTDRU Officer
-            </Typography>
-            <Typography variant="caption" fontSize="0.68rem" noWrap display="block" sx={{ color: '#94A3B8' }}>
-              Senior Case Analyst
             </Typography>
           </Box>
         </Box>
@@ -252,20 +220,20 @@ const Sidebar = ({ onLogout }) => {
           anchorEl={profileAnchor}
           open={Boolean(profileAnchor)}
           onClose={() => setProfileAnchor(null)}
-          PaperProps={{ sx: { width: 220, mb: 1, borderRadius: 1, p: 0.5, bgcolor: '#1E293B', color: '#FFFFFF' } }}
+          PaperProps={{ sx: { width: 220, mb: 1, borderRadius: 1, p: 0.5, bgcolor: tokens.navyMid, color: '#FFFFFF' } }}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
           <Box sx={{ px: 2, py: 1 }}>
             <Typography variant="subtitle2" fontWeight="800">CTDRU Analyst</Typography>
-            <Typography variant="caption" sx={{ color: '#94A3B8' }}>officer@ctdru.ug</Typography>
+            <Typography variant="caption" sx={{ color: MUTED }}>Staff account</Typography>
           </Box>
           <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.1)' }} />
           <MenuItem onClick={() => setProfileAnchor(null)} sx={{ borderRadius: 0.5, fontSize: '0.85rem' }}>
-            <ProfileIcon fontSize="small" sx={{ mr: 1.5, color: '#38BDF8' }} /> Account Profile
+            <ProfileIcon fontSize="small" sx={{ mr: 1.5, color: ACCENT }} /> Account Profile
           </MenuItem>
           <MenuItem onClick={() => setProfileAnchor(null)} sx={{ borderRadius: 0.5, fontSize: '0.85rem' }}>
-            <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: '#38BDF8' }} /> System Preferences
+            <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: ACCENT }} /> System Preferences
           </MenuItem>
           <Divider sx={{ my: 0.5, borderColor: 'rgba(255,255,255,0.1)' }} />
           <MenuItem

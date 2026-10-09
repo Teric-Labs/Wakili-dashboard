@@ -104,15 +104,15 @@ describe('debounce', () => {
 
 describe('getStatusColor', () => {
   it('maps known statuses to their color', () => {
-    expect(getStatusColor('pending')).toBe('#FFA000');
-    expect(getStatusColor('completed')).toBe('#2E7D32');
+    expect(getStatusColor('pending')).toBe('#B8860B');
+    expect(getStatusColor('completed')).toBe('#2F6B4F');
   });
 
   it('is case-insensitive', () => {
-    expect(getStatusColor('PENDING')).toBe('#FFA000');
+    expect(getStatusColor('PENDING')).toBe('#B8860B');
   });
 
   it('falls back to a default color for unknown statuses', () => {
-    expect(getStatusColor('unknown-status')).toBe('#6B7280');
+    expect(getStatusColor('unknown-status')).toBe('#5C6B7A');
   });
 });

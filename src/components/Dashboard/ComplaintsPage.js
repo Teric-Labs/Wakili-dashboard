@@ -59,28 +59,22 @@ import {
   Legend
 } from 'recharts';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { createComplaint, updateComplaint, createIncident, updateIncident, getComplaints, getIncidents, getCaseTypeAnalytics, getFintechBreakdown } from '../services/api';
 
-const DEFAULT_CASE_TYPES = [
-  { month: 'Jan', WrongNumber: 320, UnauthDebit: 120, AirtimeDeduction: 180, AgentDispute: 90 },
-  { month: 'Feb', WrongNumber: 410, UnauthDebit: 210, AirtimeDeduction: 230, AgentDispute: 140 },
-  { month: 'Mar', WrongNumber: 380, UnauthDebit: 190, AirtimeDeduction: 210, AgentDispute: 110 },
-  { month: 'Apr', WrongNumber: 520, UnauthDebit: 340, AirtimeDeduction: 290, AgentDispute: 180 },
-  { month: 'May', WrongNumber: 490, UnauthDebit: 280, AirtimeDeduction: 260, AgentDispute: 160 },
-  { month: 'Jun', WrongNumber: 680, UnauthDebit: 410, AirtimeDeduction: 310, AgentDispute: 220 },
-  { month: 'Jul', WrongNumber: 740, UnauthDebit: 460, AirtimeDeduction: 350, AgentDispute: 250 },
-  { month: 'Aug', WrongNumber: 710, UnauthDebit: 390, AirtimeDeduction: 320, AgentDispute: 210 },
-  { month: 'Sep', WrongNumber: 650, UnauthDebit: 370, AirtimeDeduction: 290, AgentDispute: 190 },
-  { month: 'Oct', WrongNumber: 820, UnauthDebit: 510, AirtimeDeduction: 390, AgentDispute: 280 }
-];
+const EMPTY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month) => ({
+  month,
+  WrongNumber: 0,
+  UnauthDebit: 0,
+  AirtimeDeduction: 0,
+  AgentDispute: 0,
+  Fraud: 0,
+  Other: 0,
+}));
 
-const DEFAULT_FINTECH_BREAKDOWN = [
-  { entity: 'MTN MoMo', disputes: 4890, color: '#0284C7' },
-  { entity: 'Airtel Money', disputes: 3420, color: '#10B981' },
-  { entity: 'Centenary Bank', disputes: 1950, color: '#0F172A' },
-  { entity: 'Stanbic Bank', disputes: 1410, color: '#059669' },
-  { entity: 'DFCU Bank', disputes: 780, color: '#64748B' }
-];
+const OPEN_STATUSES = new Set(['received', 'pending', 'reported', 'processing', 'investigating', 'mediation', 'in_progress']);
+const RESOLVED_STATUSES = new Set(['resolved', 'closed', 'completed']);
 
 const ComplaintsPage = () => {
   const theme = useTheme();
@@ -89,8 +83,8 @@ const ComplaintsPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [monthlyCaseTypeTrends, setMonthlyCaseTypeTrends] = useState(DEFAULT_CASE_TYPES);
-  const [fintechEntityBreakdown, setFintechEntityBreakdown] = useState(DEFAULT_FINTECH_BREAKDOWN);
+  const [monthlyCaseTypeTrends, setMonthlyCaseTypeTrends] = useState(EMPTY_MONTHS);
+  const [fintechEntityBreakdown, setFintechEntityBreakdown] = useState([]);
 
   React.useEffect(() => {
     fetchBackendAnalytics();
@@ -114,7 +108,7 @@ const ComplaintsPage = () => {
       // Compute dynamic Fintech entity breakdown from real records
       const allList = [...complaintsList, ...incidentsList];
       const entityMap = {};
-      const colors = ['#0284C7', '#10B981', '#0F172A', '#059669', '#64748B', '#F59E0B', '#EF4444'];
+      const colors = ['#0B1F3A', '#B8860B', '#14345C', '#2F6B4F', '#5C6B7A', '#D4A84B', '#9B2C2C'];
       
       allList.forEach((c) => {
         const name = (c.company_name || c.product_service || 'Unspecified').trim();
@@ -129,39 +123,26 @@ const ComplaintsPage = () => {
 
       if (fintechRes && Array.isArray(fintechRes) && fintechRes.length > 0) {
         setFintechEntityBreakdown(fintechRes);
-      } else if (dynamicBreakdown.length > 0) {
+      } else {
         setFintechEntityBreakdown(dynamicBreakdown);
       }
 
-      // Calculate dynamic DISPUTE VOLUME TRENDS BY CASE TYPE graph combining backend analytics and live Firestore records
-      const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
-      const dynamicTrends = monthsList.map((m, idx) => {
-        const base = caseTypesRes && Array.isArray(caseTypesRes) && caseTypesRes[idx] ? caseTypesRes[idx] : {};
-        let wrong = base.WrongNumber || 10;
-        let unauth = base.UnauthDebit || 5;
-        let airtime = base.AirtimeDeduction || 8;
-        let agent = base.AgentDispute || 3;
-
-        if (m === 'Sep' || m === 'Oct') {
-          allList.forEach(c => {
-            const issue = (c.issue_type || c.case_type || '').toLowerCase();
-            if (issue.includes('wrong') || issue.includes('sent_money') || issue.includes('number')) wrong += 1;
-            else if (issue.includes('fraud') || issue.includes('security') || issue.includes('unauth')) unauth += 1;
-            else if (issue.includes('airtime') || issue.includes('data') || issue.includes('service')) airtime += 1;
-            else agent += 1;
-          });
-        }
-
-        return {
-          month: m,
-          WrongNumber: wrong,
-          UnauthDebit: unauth,
-          AirtimeDeduction: airtime,
-          AgentDispute: agent
-        };
-      });
-
-      setMonthlyCaseTypeTrends(dynamicTrends);
+      // Prefer backend case-type monthly series; otherwise zeros (never invent volumes).
+      if (Array.isArray(caseTypesRes) && caseTypesRes.length > 0) {
+        setMonthlyCaseTypeTrends(
+          caseTypesRes.map((row) => ({
+            month: row.month,
+            WrongNumber: row.WrongNumber || 0,
+            UnauthDebit: row.UnauthDebit || 0,
+            AirtimeDeduction: row.AirtimeDeduction || 0,
+            AgentDispute: row.AgentDispute || 0,
+            Fraud: row.Fraud || 0,
+            Other: row.Other || 0,
+          }))
+        );
+      } else {
+        setMonthlyCaseTypeTrends(EMPTY_MONTHS);
+      }
     } catch (e) {
       console.error("Backend analytics loading error:", e);
     }
@@ -300,6 +281,16 @@ const ComplaintsPage = () => {
 
   // Combined dataset
   const allCases = [...complaints, ...incidents];
+  const resolvedCount = allCases.filter((c) => RESOLVED_STATUSES.has((c.status || '').toLowerCase())).length;
+  const openCount = allCases.filter((c) => {
+    const st = (c.status || '').toLowerCase();
+    return OPEN_STATUSES.has(st) || !st;
+  }).length;
+  const fraudCount = allCases.filter((c) => {
+    const blob = `${c.priority || ''} ${c.case_type || ''} ${c.issue_type || ''}`.toLowerCase();
+    return blob.includes('fraud') || (c.priority || '').toLowerCase() === 'high' || Boolean(c.incident_id);
+  }).length;
+  const settlementRate = allCases.length > 0 ? `${((resolvedCount / allCases.length) * 100).toFixed(1)}%` : '0%';
 
   // Filtering
   const getFilteredData = () => {
@@ -361,97 +352,53 @@ const ComplaintsPage = () => {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setOpenCreateComplaint(true)}
-              sx={{ borderRadius: 2, fontWeight: 'bold', background: 'linear-gradient(135deg, #00F2FE 0%, #0284C7 100%)' }}
+              sx={{ borderRadius: 2, fontWeight: 'bold', background: 'linear-gradient(135deg, #14345C 0%, #0B1F3A 100%)' }}
             >
               File Claim
             </Button>
           </Stack>
         </Box>
 
-        {/* 4 Telemetry Summary Cards */}
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    TOTAL CLAIMS LODGED
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {allCases.length.toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Live Database Records
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
-                  <ComplaintsIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Total claims"
+              value={allCases.length.toLocaleString()}
+              hint={`${complaints.length} complaints · ${incidents.length} incidents`}
+              icon={<ComplaintsIcon fontSize="small" />}
+              accent={tokens.navy}
+              accentSoft="rgba(11, 31, 58, 0.08)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    SETTLEMENT RATE
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {allCases.length > 0 ? ((allCases.filter(c => (c.status || '').toLowerCase() === 'resolved').length / allCases.length) * 100).toFixed(1) + '%' : '0.0%'}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Real Settlement Rate
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <CheckIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Settlement rate"
+              value={settlementRate}
+              hint={`${resolvedCount} resolved cases`}
+              icon={<CheckIcon fontSize="small" />}
+              accent={tokens.success}
+              accentSoft="rgba(47, 107, 79, 0.12)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    PENDING ARBITRATION
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {allCases.filter(c => ['received', 'pending', 'reported', 'processing'].includes((c.status || '').toLowerCase())).length.toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="warning.main" fontWeight="700">
-                    Active Queue
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
-                  <ScheduleIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Open queue"
+              value={openCount.toLocaleString()}
+              hint="Awaiting officer action"
+              icon={<ScheduleIcon fontSize="small" />}
+              accent={tokens.gold}
+              accentSoft="rgba(184, 134, 11, 0.12)"
+            />
           </Grid>
-
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    HIGH PRIORITY / FRAUD
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'error.main' }}>
-                    {allCases.filter(c => (c.priority || '').toLowerCase() === 'high' || (c.case_type || '').toLowerCase().includes('fraud')).length.toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="error.main" fontWeight="700">
-                    Security Alerts
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(239, 68, 68, 0.12)', color: 'error.main', width: 44, height: 44 }}>
-                  <WarningIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
+            <StatCard
+              label="Fraud alerts"
+              value={fraudCount.toLocaleString()}
+              hint={fraudCount > 0 ? 'Priority review recommended' : 'No fraud pressure'}
+              icon={<WarningIcon fontSize="small" />}
+              accent={tokens.danger}
+              accentSoft="rgba(155, 44, 44, 0.1)"
+            />
           </Grid>
         </Grid>
 
@@ -462,11 +409,11 @@ const ComplaintsPage = () => {
             <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper, height: '100%' }}>
               <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography variant="subtitle1" fontWeight="800" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AnalyticsIcon color="primary" fontSize="small" /> DISPUTE VOLUME TRENDS BY CASE TYPE (YTD)
+                  <Typography variant="subtitle1" fontWeight="700" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AnalyticsIcon fontSize="small" sx={{ color: tokens.navy }} /> Case volume by type (YTD)
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Color-differentiated monthly claim volume across distinct consumer dispute categories
+                    Live monthly counts from complaints and incidents
                   </Typography>
                 </Box>
               </Box>
@@ -484,10 +431,11 @@ const ComplaintsPage = () => {
                       }} 
                     />
                     <Legend wrapperStyle={{ fontSize: '0.78rem', paddingTop: '10px' }} />
-                    <Line type="monotone" name="Wrong Number Transfers" dataKey="WrongNumber" stroke="#0284C7" strokeWidth={2.5} dot={{ r: 4 }} />
-                    <Line type="monotone" name="Unauthorized Debits & Fraud" dataKey="UnauthDebit" stroke="#0F172A" strokeWidth={2.5} dot={{ r: 4 }} />
-                    <Line type="monotone" name="Airtime / Wallet Deductions" dataKey="AirtimeDeduction" stroke="#10B981" strokeWidth={2.5} dot={{ r: 4 }} />
-                    <Line type="monotone" name="Agent Fee Disputes" dataKey="AgentDispute" stroke="#64748B" strokeWidth={2.5} dot={{ r: 4 }} />
+                    <Line type="monotone" name="Wrong number" dataKey="WrongNumber" stroke={tokens.navy} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line type="monotone" name="Unauth. debit" dataKey="UnauthDebit" stroke={tokens.gold} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line type="monotone" name="Airtime" dataKey="AirtimeDeduction" stroke={tokens.success} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line type="monotone" name="Agent dispute" dataKey="AgentDispute" stroke={tokens.muted} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line type="monotone" name="Fraud" dataKey="Fraud" stroke={tokens.danger} strokeWidth={2.5} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -498,33 +446,39 @@ const ComplaintsPage = () => {
           <Grid item xs={12} md={4}>
             <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper, height: '100%' }}>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" fontWeight="800">
-                  DISPUTES BY FINTECH ENTITY
+                <Typography variant="subtitle1" fontWeight="700">
+                  Disputes by provider
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Total claims distribution across mobile money & banking entities
+                  Counts from the live case register
                 </Typography>
               </Box>
 
               <Box sx={{ width: '100%', height: 280 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={fintechEntityBreakdown} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                    <XAxis type="number" stroke={theme.palette.text.secondary} fontSize={11} />
-                    <YAxis dataKey="entity" type="category" stroke={theme.palette.text.secondary} fontSize={11} width={80} />
-                    <ChartTooltip 
-                      contentStyle={{ 
-                        backgroundColor: theme.palette.background.paper, 
-                        borderColor: theme.palette.divider,
-                        borderRadius: 8
-                      }} 
-                    />
-                    <Bar dataKey="disputes" radius={[0, 6, 6, 0]}>
-                      {fintechEntityBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {fintechEntityBreakdown.length === 0 ? (
+                  <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">No provider data yet</Typography>
+                  </Box>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={fintechEntityBreakdown} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                      <XAxis type="number" stroke={theme.palette.text.secondary} fontSize={11} allowDecimals={false} />
+                      <YAxis dataKey="entity" type="category" stroke={theme.palette.text.secondary} fontSize={11} width={90} />
+                      <ChartTooltip
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          borderColor: theme.palette.divider,
+                          borderRadius: 8,
+                        }}
+                      />
+                      <Bar dataKey="disputes" radius={[0, 4, 4, 0]}>
+                        {fintechEntityBreakdown.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || tokens.navy} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </Box>
             </Card>
           </Grid>
@@ -795,7 +749,7 @@ const ComplaintsPage = () => {
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
             <Button onClick={() => setOpenCreateComplaint(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleCreateComplaint} sx={{ background: 'linear-gradient(135deg, #00F2FE 0%, #0284C7 100%)' }}>
+            <Button variant="contained" onClick={handleCreateComplaint} sx={{ background: 'linear-gradient(135deg, #14345C 0%, #0B1F3A 100%)' }}>
               Submit Claim
             </Button>
           </DialogActions>

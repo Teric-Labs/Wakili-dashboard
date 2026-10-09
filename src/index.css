@@ -1,53 +1,46 @@
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #14345C;
+  --ink: #15202B;
+  --paper: #F7F4EF;
+  --sand: #E8E1D5;
+  --gold: #B8860B;
+  --muted: #5C6B7A;
+  --line: rgba(11, 31, 58, 0.12);
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  background: var(--paper);
+  color: var(--navy);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* Ensure the root div takes full height */
 html, body, #root {
   height: 100%;
 }
 
-/* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: rgba(11, 31, 58, 0.2);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* For dark mode */
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-track {
-    background: #2d2d2d;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #666;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: #888;
-  }
+  background: rgba(11, 31, 58, 0.35);
 }

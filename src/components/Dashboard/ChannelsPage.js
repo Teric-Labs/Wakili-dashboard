@@ -32,7 +32,6 @@ import {
   Language as WebIcon,
   CheckCircle as OnlineIcon,
   Refresh as RefreshIcon,
-  Speed as SpeedIcon,
   GraphicEq as SignalIcon,
   TrendingUp as TrendingIcon,
   MoreVert as MoreVertIcon,
@@ -40,7 +39,11 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import Sidebar from '../Layout/Sidebar';
+import StatCard from './StatCard';
+import { tokens } from '../../theme/tokens';
 import { getChannelsOverview, getUssdLogs, getSmsLogs, getIvrLogs } from '../services/api';
+
+const parseVolume = (value) => parseInt(String(value || '0').replace(/,/g, ''), 10) || 0;
 
 const ChannelsPage = () => {
   const theme = useTheme();
@@ -94,19 +97,14 @@ const ChannelsPage = () => {
     fetchBackendChannelsData();
   };
 
-  // App Metrics Logs
-  const appLogs = [
-    { platform: 'Android 14', device: 'Samsung Galaxy A54', appVer: 'v2.4.1', payload: 'Form Intake + PDF Evidence', responseTime: '124ms', status: 'Success' },
-    { platform: 'iOS 17.4', device: 'iPhone 14 Pro', appVer: 'v2.4.0', payload: 'Biometric Auth + Status Check', responseTime: '98ms', status: 'Success' },
-    { platform: 'Android 13', device: 'Tecno Spark 10', appVer: 'v2.4.1', payload: 'Dispute Claim Lodged', responseTime: '165ms', status: 'Success' }
-  ];
+  const volumeBreakdown = (channelOverview || []).map((row) => ({
+    name: row.name,
+    share: parseInt(String(row.share || '0').replace('%', ''), 10) || 0,
+    volume: parseVolume(row.volume),
+  }));
 
-  // Web Telemetry Logs
-  const webLogs = [
-    { session: 'WEB-1092', browser: 'Chrome 122.0 / Mac', ipRegion: 'Kampala Central', captcha: 'Passed', duration: '1m 50s', result: 'Form Submitted' },
-    { session: 'WEB-1091', browser: 'Safari Mobile / iOS', ipRegion: 'Mbarara Municipality', captcha: 'Passed', duration: '2m 15s', result: 'Form Submitted' },
-    { session: 'WEB-1090', browser: 'Firefox 123.0 / Windows', ipRegion: 'Jinja City', captcha: 'Passed', duration: '45s', result: 'Status Lookup' }
-  ];
+  const findChannel = (needle) =>
+    (channelOverview || []).find((c) => String(c.name || '').toLowerCase().includes(needle));
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -136,94 +134,59 @@ const ChannelsPage = () => {
 
         {loading && <LinearProgress sx={{ mb: 3, borderRadius: 2, height: 4 }} />}
 
-        {/* 4 Summary Telemetry Cards */}
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    TOTAL INGEST VOLUME
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    {(Array.isArray(channelOverview) && channelOverview.length > 0
-                      ? channelOverview.reduce((acc, c) => acc + (parseInt((c.volume || '0').toString().replace(/,/g, ''), 10) || 0), 0)
-                      : (ussdLogs.length + smsLogs.length + ivrLogs.length)).toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Live Channel Operations
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: 'primary.main', width: 44, height: 44 }}>
-                  <TrendingIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    GATEWAY LATENCY
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    142 ms
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    Optimal Processing Rate
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <SpeedIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    TOP CHANNEL
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5 }}>
-                    USSD
-                  </Typography>
-                  <Typography variant="caption" color="info.main" fontWeight="700">
-                    44% Total Dispute Claims
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: 'warning.main', width: 44, height: 44 }}>
-                  <UssdIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 2.5, bgcolor: theme.palette.background.paper }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">
-                    SYSTEM HEALTH
-                  </Typography>
-                  <Typography variant="h4" fontWeight="800" sx={{ my: 0.5, color: 'success.main' }}>
-                    99.94%
-                  </Typography>
-                  <Typography variant="caption" color="success.main" fontWeight="700">
-                    5/5 Gateways Active
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: 'success.main', width: 44, height: 44 }}>
-                  <OnlineIcon fontSize="small" />
-                </Avatar>
-              </Stack>
-            </Card>
-          </Grid>
-        </Grid>
+        {(() => {
+          const totalVolume = Array.isArray(channelOverview) && channelOverview.length > 0
+            ? channelOverview.reduce((acc, c) => acc + parseVolume(c.volume), 0)
+            : ussdLogs.length + smsLogs.length + ivrLogs.length;
+          const ranked = [...(channelOverview || [])].sort((a, b) => parseVolume(b.volume) - parseVolume(a.volume));
+          const top = ranked[0];
+          const onlineCount = (channelOverview || []).filter((c) => String(c.status || '').toUpperCase() === 'ONLINE').length;
+          const totalChannels = (channelOverview || []).length;
+          return (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Session volume"
+                  value={totalVolume.toLocaleString()}
+                  hint="Conversations across intake channels"
+                  icon={<TrendingIcon fontSize="small" />}
+                  accent={tokens.navy}
+                  accentSoft="rgba(11, 31, 58, 0.08)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Top channel"
+                  value={top?.name?.replace(/\s*\(.*\)/, '') || '—'}
+                  hint={top ? `${top.share || '0%'} of sessions` : 'No channel traffic yet'}
+                  icon={<UssdIcon fontSize="small" />}
+                  accent={tokens.gold}
+                  accentSoft="rgba(184, 134, 11, 0.12)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Channel logs"
+                  value={(ussdLogs.length + smsLogs.length + ivrLogs.length).toLocaleString()}
+                  hint={`${ussdLogs.length} USSD · ${smsLogs.length} SMS · ${ivrLogs.length} IVR`}
+                  icon={<SignalIcon fontSize="small" />}
+                  accent={tokens.navyMid}
+                  accentSoft="rgba(20, 52, 92, 0.1)"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  label="Channels online"
+                  value={totalChannels ? `${onlineCount}/${totalChannels}` : '0/0'}
+                  hint={totalChannels ? 'From live conversation attribution' : 'Awaiting traffic'}
+                  icon={<OnlineIcon fontSize="small" />}
+                  accent={tokens.success}
+                  accentSoft="rgba(47, 107, 79, 0.12)"
+                />
+              </Grid>
+            </Grid>
+          );
+        })()}
 
         {/* Tab Selection Bar */}
         <Card sx={{ mb: 3 }}>
@@ -275,29 +238,37 @@ const ChannelsPage = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {channelOverview.map((row) => (
-                        <TableRow key={row.name} hover>
-                          <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
-                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{row.type}</TableCell>
-                          <TableCell>{row.volume}</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>{row.share}</TableCell>
-                          <TableCell>{row.latency}</TableCell>
-                          <TableCell sx={{ color: 'success.main', fontWeight: 700 }}>{row.successRate}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={row.status} 
-                              size="small" 
-                              color="success" 
-                              sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20 }} 
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <IconButton size="small" onClick={handleOpenMenu}>
-                              <MoreVertIcon fontSize="small" />
-                            </IconButton>
+                      {channelOverview.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                            <Typography variant="body2" color="text.secondary">No channel overview data yet</Typography>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        channelOverview.map((row) => (
+                          <TableRow key={row.name} hover>
+                            <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
+                            <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{row.type}</TableCell>
+                            <TableCell>{row.volume}</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>{row.share}</TableCell>
+                            <TableCell>{row.latency || '—'}</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>{row.successRate || '—'}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={row.status}
+                                size="small"
+                                color={String(row.status).toUpperCase() === 'ONLINE' ? 'success' : 'default'}
+                                sx={{ fontWeight: 700, fontSize: '0.65rem', height: 20 }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" onClick={handleOpenMenu}>
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -306,45 +277,29 @@ const ChannelsPage = () => {
 
             <Grid item xs={12} md={4}>
               <Card sx={{ p: 3, height: '100%' }}>
-                <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 2 }}>
-                  CHANNEL VOLUME BREAKDOWN
+                <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 2 }}>
+                  Channel volume breakdown
                 </Typography>
                 <Stack spacing={2.5}>
-                  <Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">USSD</Typography>
-                      <Typography variant="body2" fontWeight="800" color="primary.main">44%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={44} sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
-                  <Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">SMS (8008)</Typography>
-                      <Typography variant="body2" fontWeight="800" color="info.main">22%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={22} color="info" sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
-                  <Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">IVR Voice (0800)</Typography>
-                      <Typography variant="body2" fontWeight="800" color="warning.main">17%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={17} color="warning" sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
-                  <Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">Mobile App</Typography>
-                      <Typography variant="body2" fontWeight="800" color="secondary.main">11%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={11} color="secondary" sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
-                  <Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight="700">Web Portal</Typography>
-                      <Typography variant="body2" fontWeight="800" color="success.main">6%</Typography>
-                    </Stack>
-                    <LinearProgress variant="determinate" value={6} color="success" sx={{ height: 8, borderRadius: 4 }} />
-                  </Box>
+                  {volumeBreakdown.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">No channel traffic yet</Typography>
+                  ) : (
+                    volumeBreakdown.map((row) => (
+                      <Box key={row.name}>
+                        <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                          <Typography variant="body2" fontWeight="600">{row.name}</Typography>
+                          <Typography variant="body2" fontWeight="700" sx={{ color: tokens.navy }}>
+                            {row.share}% · {row.volume}
+                          </Typography>
+                        </Stack>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min(100, row.share)}
+                          sx={{ height: 7, borderRadius: 1, bgcolor: tokens.sand, '& .MuiLinearProgress-bar': { bgcolor: tokens.navy } }}
+                        />
+                      </Box>
+                    ))
+                  )}
                 </Stack>
               </Card>
             </Grid>
@@ -369,26 +324,32 @@ const ChannelsPage = () => {
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">ACTIVE USSD SESSIONS</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>342</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">USSD SESSIONS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {parseVolume(findChannel('ussd')?.volume) || ussdLogs.length}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">AVG DURATION</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>32 sec</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SHARE OF TRAFFIC</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('ussd')?.share || '0%'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">COMPLETION RATE</Typography>
-                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>92.4%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SUCCESS RATE</Typography>
+                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>
+                    {findChannel('ussd')?.successRate || '—'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">TELCO TIMEOUTS</Typography>
-                  <Typography variant="h5" fontWeight="800" color="warning.main" sx={{ mt: 0.5 }}>1.8%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">LOG ENTRIES</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>{ussdLogs.length}</Typography>
                 </Paper>
               </Grid>
             </Grid>
@@ -410,28 +371,36 @@ const ChannelsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {ussdLogs.map((log) => (
-                    <TableRow key={log.id} hover>
-                      <TableCell sx={{ fontWeight: 600 }}>{log.telco}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace' }}>{log.code}</TableCell>
-                      <TableCell>{log.steps}</TableCell>
-                      <TableCell>{log.duration}</TableCell>
-                      <TableCell>{log.time}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={log.status} 
-                          size="small" 
-                          color={log.status === 'Submitted' ? 'success' : 'warning'} 
-                          sx={{ fontWeight: 800, fontSize: '0.65rem' }} 
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={handleOpenMenu}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
+                  {ussdLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">No USSD logs recorded yet</Typography>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    ussdLogs.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontWeight: 600 }}>{log.telco}</TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>{log.code}</TableCell>
+                        <TableCell>{log.steps}</TableCell>
+                        <TableCell>{log.duration}</TableCell>
+                        <TableCell>{log.time}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={log.status}
+                            size="small"
+                            color={log.status === 'Submitted' ? 'success' : 'warning'}
+                            sx={{ fontWeight: 700, fontSize: '0.65rem' }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={handleOpenMenu}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -456,26 +425,32 @@ const ChannelsPage = () => {
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">SMS RECEIVED TODAY</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>1,240</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SMS SESSIONS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {parseVolume(findChannel('sms')?.volume) || smsLogs.length}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">AUTO-ACK SENT</Typography>
-                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>99.8%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SHARE OF TRAFFIC</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('sms')?.share || '0%'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">KEYWORD MATCH RATE</Typography>
-                  <Typography variant="h5" fontWeight="800" color="info.main" sx={{ mt: 0.5 }}>96.4%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SUCCESS RATE</Typography>
+                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>
+                    {findChannel('sms')?.successRate || '—'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">FAILED DELIVERY</Typography>
-                  <Typography variant="h5" fontWeight="800" color="error.main" sx={{ mt: 0.5 }}>0.2%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">LOG ENTRIES</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>{smsLogs.length}</Typography>
                 </Paper>
               </Grid>
             </Grid>
@@ -496,20 +471,28 @@ const ChannelsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {smsLogs.map((log) => (
-                    <TableRow key={log.id} hover>
-                      <TableCell sx={{ fontFamily: 'monospace' }}>{log.sender}</TableCell>
-                      <TableCell>{log.carrier}</TableCell>
-                      <TableCell><Chip label={log.keyword} size="small" color="primary" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell sx={{ fontSize: '0.82rem' }}>{log.text}</TableCell>
-                      <TableCell><Chip label={log.status} size="small" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={handleOpenMenu}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
+                  {smsLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">No SMS logs recorded yet</Typography>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    smsLogs.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>{log.sender}</TableCell>
+                        <TableCell>{log.carrier}</TableCell>
+                        <TableCell><Chip label={log.keyword} size="small" color="primary" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /></TableCell>
+                        <TableCell sx={{ fontSize: '0.82rem' }}>{log.text}</TableCell>
+                        <TableCell><Chip label={log.status} size="small" color="success" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /></TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={handleOpenMenu}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -534,26 +517,32 @@ const ChannelsPage = () => {
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">CALLS HANDLED TODAY</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>412</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">IVR SESSIONS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {parseVolume(findChannel('ivr')?.volume) || ivrLogs.length}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">AVG HOLD TIME</Typography>
-                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>14 sec</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SHARE OF TRAFFIC</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('ivr')?.share || '0%'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">AI VOICE BOT INTAKE</Typography>
-                  <Typography variant="h5" fontWeight="800" color="info.main" sx={{ mt: 0.5 }}>82.5%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SUCCESS RATE</Typography>
+                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>
+                    {findChannel('ivr')?.successRate || '—'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">HUMAN OFFICER ESCALATION</Typography>
-                  <Typography variant="h5" fontWeight="800" color="warning.main" sx={{ mt: 0.5 }}>17.5%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">LOG ENTRIES</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>{ivrLogs.length}</Typography>
                 </Paper>
               </Grid>
             </Grid>
@@ -575,21 +564,29 @@ const ChannelsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {ivrLogs.map((log) => (
-                    <TableRow key={log.id} hover>
-                      <TableCell sx={{ fontFamily: 'monospace' }}>{log.caller}</TableCell>
-                      <TableCell>{log.language}</TableCell>
-                      <TableCell>{log.duration}</TableCell>
-                      <TableCell>{log.waitTime}</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>{log.agent}</TableCell>
-                      <TableCell><Chip label={log.resolution} size="small" color="primary" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={handleOpenMenu}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
+                  {ivrLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">No IVR logs recorded yet</Typography>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    ivrLogs.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>{log.caller}</TableCell>
+                        <TableCell>{log.language}</TableCell>
+                        <TableCell>{log.duration}</TableCell>
+                        <TableCell>{log.waitTime}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>{log.agent}</TableCell>
+                        <TableCell><Chip label={log.resolution} size="small" color="primary" sx={{ fontWeight: 700, fontSize: '0.65rem' }} /></TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={handleOpenMenu}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -614,65 +611,44 @@ const ChannelsPage = () => {
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">ACTIVE USERS</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>8,420</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">APP SESSIONS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {parseVolume(findChannel('mobile')?.volume)}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">CRASH-FREE RATE</Typography>
-                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>99.85%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SHARE OF TRAFFIC</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('mobile')?.share || '0%'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">API LATENCY</Typography>
-                  <Typography variant="h5" fontWeight="800" color="info.main" sx={{ mt: 0.5 }}>112 ms</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SUCCESS RATE</Typography>
+                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>
+                    {findChannel('mobile')?.successRate || '—'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">PUSH OPT-IN</Typography>
-                  <Typography variant="h5" fontWeight="800" color="secondary.main" sx={{ mt: 0.5 }}>84.2%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">STATUS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('mobile')?.status || 'IDLE'}
+                  </Typography>
                 </Paper>
               </Grid>
             </Grid>
 
-            <Typography variant="subtitle2" fontWeight="800" sx={{ mb: 1.5 }}>
-              MOBILE API REQUEST PAYLOAD TELEMETRY
+            <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 1.5 }}>
+              Mobile app session logs
             </Typography>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>PLATFORM</TableCell>
-                    <TableCell>DEVICE MODEL</TableCell>
-                    <TableCell>APP VERSION</TableCell>
-                    <TableCell>ACTION / PAYLOAD</TableCell>
-                    <TableCell>RESPONSE TIME</TableCell>
-                    <TableCell>STATUS</TableCell>
-                    <TableCell align="right">ACTIONS</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {appLogs.map((log, idx) => (
-                    <TableRow key={idx} hover>
-                      <TableCell sx={{ fontWeight: 700 }}>{log.platform}</TableCell>
-                      <TableCell>{log.device}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace' }}>{log.appVer}</TableCell>
-                      <TableCell>{log.payload}</TableCell>
-                      <TableCell>{log.responseTime}</TableCell>
-                      <TableCell><Chip label={log.status} size="small" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={handleOpenMenu}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No dedicated mobile app log feed yet — session counts come from conversation channel attribution.
+            </Typography>
           </Card>
         )}
 
@@ -694,63 +670,44 @@ const ChannelsPage = () => {
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">DAILY VISITORS</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>3,150</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">WEB SESSIONS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {parseVolume(findChannel('web')?.volume)}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">FORM CONVERSIONS</Typography>
-                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>14.2%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SHARE OF TRAFFIC</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('web')?.share || '0%'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">CAPTCHA PASS RATE</Typography>
-                  <Typography variant="h5" fontWeight="800" color="info.main" sx={{ mt: 0.5 }}>98.9%</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">SUCCESS RATE</Typography>
+                  <Typography variant="h5" fontWeight="800" color="success.main" sx={{ mt: 0.5 }}>
+                    {findChannel('web')?.successRate || '—'}
+                  </Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">WAF SECURITY BLOCKS</Typography>
-                  <Typography variant="h5" fontWeight="800" color="warning.main" sx={{ mt: 0.5 }}>24</Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">STATUS</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
+                    {findChannel('web')?.status || 'IDLE'}
+                  </Typography>
                 </Paper>
               </Grid>
             </Grid>
 
-            <Typography variant="subtitle2" fontWeight="800" sx={{ mb: 1.5 }}>
-              WEB PORTAL SESSION INGEST LOGS
+            <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 1.5 }}>
+              Web portal session logs
             </Typography>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>USER BROWSER / OS</TableCell>
-                    <TableCell>IP REGION</TableCell>
-                    <TableCell>CAPTCHA</TableCell>
-                    <TableCell>TIME ON PAGE</TableCell>
-                    <TableCell>RESULT</TableCell>
-                    <TableCell align="right">ACTIONS</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {webLogs.map((log) => (
-                    <TableRow key={log.session} hover>
-                      <TableCell sx={{ fontWeight: 600 }}>{log.browser}</TableCell>
-                      <TableCell>{log.ipRegion}</TableCell>
-                      <TableCell><Chip label={log.captcha} size="small" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell>{log.duration}</TableCell>
-                      <TableCell><Chip label={log.result} size="small" color="primary" sx={{ fontWeight: 800, fontSize: '0.65rem' }} /></TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={handleOpenMenu}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No dedicated web portal log feed yet — session counts come from conversation channel attribution.
+            </Typography>
           </Card>
         )}
 

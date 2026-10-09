@@ -99,16 +99,16 @@ export const formatNumber = (num) => {
    */
   export const getStatusColor = (status) => {
     const statusMap = {
-      pending: '#FFA000',
-      processing: '#3B82F6',
-      shipped: '#10B981',
-      delivered: '#2E7D32',
-      cancelled: '#EF4444',
-      returned: '#6B7280',
-      completed: '#2E7D32',
-      active: '#10B981',
-      inactive: '#6B7280',
+      pending: '#B8860B',
+      processing: '#14345C',
+      shipped: '#2F6B4F',
+      delivered: '#2F6B4F',
+      cancelled: '#9B2C2C',
+      returned: '#5C6B7A',
+      completed: '#2F6B4F',
+      active: '#2F6B4F',
+      inactive: '#5C6B7A',
     };
     
-    return statusMap[status.toLowerCase()] || '#6B7280';
+    return statusMap[status.toLowerCase()] || '#5C6B7A';
   };

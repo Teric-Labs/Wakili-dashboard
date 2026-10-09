@@ -65,7 +65,7 @@ describe('Homepage', () => {
     const { container } = renderHomepage();
 
     await waitForElementToBeRemoved(() => container.querySelector('.MuiLinearProgress-indeterminate'));
-    expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+    expect(screen.getByText('Operations overview')).toBeInTheDocument();
     expect(screen.getByText(/no complaints or incidents registered/i)).toBeInTheDocument();
   });
 });
