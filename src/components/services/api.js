@@ -209,7 +209,11 @@ export const getDocumentStats = async () => {
   return response.data;
 };
 
-export const downloadDocument = (documentId) => {
+/** Prefer durable public R2 URL from Firestore; fall back to API download. */
+export const downloadDocument = (documentId, fileUrl) => {
+  if (fileUrl && /^https?:\/\//i.test(fileUrl)) {
+    return fileUrl;
+  }
   return `${API_URL}/documents/download/${documentId}`;
 };
 

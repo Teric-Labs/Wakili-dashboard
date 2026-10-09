@@ -148,7 +148,11 @@ const DocumentsPage = () => {
   const handleDownload = () => {
     if (selectedDoc) {
       try {
-        window.open(downloadDocument(selectedDoc.id), '_blank');
+        window.open(
+          downloadDocument(selectedDoc.id, selectedDoc.file_url),
+          '_blank',
+          'noopener,noreferrer'
+        );
       } catch (e) {
         alert(`Downloading statutory document: ${selectedDoc.title}`);
       }
