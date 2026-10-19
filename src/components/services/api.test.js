@@ -23,6 +23,10 @@ import {
   getAiAgentOverview,
   getAuditLogs,
   loginUser,
+  getEscalations,
+  getEscalation,
+  updateEscalation,
+  getPiiComplianceStats,
 } from './api';
 
 const mockAxiosInstance = axios.create();
@@ -134,6 +138,55 @@ describe('audit endpoints', () => {
     await getAuditLogs();
 
     expect(mockAxiosInstance.get).toHaveBeenCalledWith('/audit/logs');
+  });
+});
+
+describe('escalations endpoints', () => {
+  it('getEscalations calls GET /escalations with default pagination', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+
+    await getEscalations();
+
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/escalations?page=1&page_size=50');
+  });
+
+  it('getEscalations appends status when provided', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: [] });
+
+    await getEscalations({ status: 'open' });
+
+    const [url] = mockAxiosInstance.get.mock.calls[0];
+    expect(url).toContain('&status=open');
+  });
+
+  it('getEscalation calls GET /escalations/:id', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { escalation_id: 'e1' } });
+
+    const result = await getEscalation('e1');
+
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/escalations/e1');
+    expect(result).toEqual({ escalation_id: 'e1' });
+  });
+
+  it('updateEscalation puts the payload to /escalations/:id', async () => {
+    const payload = { status: 'resolved', officer_notes: 'Routed to MTN.' };
+    mockAxiosInstance.put.mockResolvedValueOnce({ data: { escalation_id: 'e1', ...payload } });
+
+    const result = await updateEscalation('e1', payload);
+
+    expect(mockAxiosInstance.put).toHaveBeenCalledWith('/escalations/e1', payload);
+    expect(result).toEqual({ escalation_id: 'e1', ...payload });
+  });
+});
+
+describe('compliance endpoints', () => {
+  it('getPiiComplianceStats calls GET /dashboard/pii-compliance', async () => {
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { total_redactions: 0 } });
+
+    const result = await getPiiComplianceStats();
+
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/dashboard/pii-compliance');
+    expect(result).toEqual({ total_redactions: 0 });
   });
 });
 

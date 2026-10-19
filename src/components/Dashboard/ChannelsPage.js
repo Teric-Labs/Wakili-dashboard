@@ -16,7 +16,6 @@ import {
   Chip,
   Button,
   LinearProgress,
-  Avatar,
   Paper,
   IconButton,
   Menu,

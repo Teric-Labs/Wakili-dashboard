@@ -1,15 +1,19 @@
-# Farm Operations Dashboard
+# Wakili Dashboard
 
-React dashboard for managing agricultural commerce, inventory, farmer activity, and access to financial services.
+CTDR-U's internal admin dashboard for WakiliBot, Uganda's AI-assisted financial
+consumer-protection service. Staff review and manage complaints, fraud
+incidents, documents, and the Wakilibot AI agent's conversation activity.
 
 ## Features
 
-- Operational metrics and trend views
-- Agricultural input catalogue and inventory management
-- Purchase and sell-order workflows
-- Farmer records and activity views
-- Financial-service applications
-- Market-information requests
+- Complaint and fraud-incident case management, with status tracking
+- Document archive (upload, metadata, download, statistics)
+- Wakilibot AI agent monitoring: live session stream, intent precision,
+  language distribution, and an escalation queue filter for sessions that
+  need officer follow-up
+- Audit logs and officer roster
+- Channel overview (web, USSD, SMS, IVR)
+- Staff-only login (role comes from the backend's staff-email allowlist)
 - Responsive layouts, charts, notifications, and data grids
 
 ## Technology

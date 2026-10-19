@@ -172,6 +172,34 @@ export const updateIncident = async (incidentId, data) => {
   return response.data;
 };
 
+// --- Escalations Endpoints ---
+// A conversation the Wakilibot-agent's guardrail layer couldn't handle
+// (low confidence, unmapped intent, refusal, ...) lands here for a CTDR-U
+// officer to review. Creation is done by the agent itself, not this UI.
+export const getEscalations = async (params = {}) => {
+  const { status, page = 1, page_size = 50 } = params;
+  let url = `/escalations?page=${page}&page_size=${page_size}`;
+  if (status) url += `&status=${status}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const getEscalation = async (escalationId) => {
+  const response = await api.get(`/escalations/${escalationId}`);
+  return response.data;
+};
+
+export const updateEscalation = async (escalationId, data) => {
+  const response = await api.put(`/escalations/${escalationId}`, data);
+  return response.data;
+};
+
+// --- Compliance Endpoints ---
+export const getPiiComplianceStats = async () => {
+  const response = await api.get('/dashboard/pii-compliance');
+  return response.data;
+};
+
 // --- Documents Management Endpoints ---
 export const getDocuments = async (params = {}) => {
   const { page = 1, page_size = 20, category, search, sort_by = 'upload_date', sort_order = 'desc' } = params;

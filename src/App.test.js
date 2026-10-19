@@ -1,5 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import {
+  getComplaints,
+  getIncidents,
+  getDashboardOverview,
+  getEscalations,
+  getPiiComplianceStats,
+} from './components/services/api';
 
 // getStoredAuth is a plain function, not jest.fn(): a jest.fn() mock here
 // mysteriously returns undefined when called via App.js's named-import
@@ -9,20 +16,34 @@ import App from './App';
 // eslint-disable-next-line no-var
 var mockStoredAuth = { access_token: 'test-token', user: { email: 'staff@test.local' } };
 jest.mock('./components/services/api', () => ({
-  getComplaints: jest.fn().mockResolvedValue([]),
-  getIncidents: jest.fn().mockResolvedValue([]),
-  getDashboardOverview: jest.fn().mockResolvedValue(null),
+  getComplaints: jest.fn(),
+  getIncidents: jest.fn(),
+  getDashboardOverview: jest.fn(),
+  getEscalations: jest.fn(),
+  getPiiComplianceStats: jest.fn(),
   getStoredAuth: () => mockStoredAuth,
   storeAuth: jest.fn(),
   clearStoredAuth: jest.fn(),
 }));
 
+// react-scripts' jest config sets resetMocks: true, which clears a mock's
+// configured return value before every test - setting .mockResolvedValue()
+// only once in the factory above would be wiped before the test body runs.
+beforeEach(() => {
+  getComplaints.mockResolvedValue([]);
+  getIncidents.mockResolvedValue([]);
+  getDashboardOverview.mockResolvedValue(null);
+  getEscalations.mockResolvedValue([]);
+  getPiiComplianceStats.mockResolvedValue(null);
+});
+
 test('renders the dashboard shell with navigation for an authenticated session', async () => {
   render(<App />);
 
-  expect(await screen.findByText(/dashboard overview/i)).toBeInTheDocument();
+  expect(await screen.findByText(/operations overview/i)).toBeInTheDocument();
   expect(screen.getAllByText(/ctdru portal/i).length).toBeGreaterThan(0);
   expect(screen.getAllByRole('link', { name: 'Disputes & Claims' }).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('link', { name: 'Escalations & Compliance' }).length).toBeGreaterThan(0);
   expect(screen.getAllByRole('link', { name: 'Audit & Security Logs' }).length).toBeGreaterThan(0);
 });
 
@@ -32,5 +53,5 @@ test('shows the staff login gate when there is no stored session', async () => {
   render(<App />);
 
   expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
-  expect(screen.queryByText(/dashboard overview/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/operations overview/i)).not.toBeInTheDocument();
 });

@@ -26,7 +26,6 @@ import {
   Tabs,
   Tab,
   Menu,
-  Avatar,
   TablePagination,
   useTheme
 } from '@mui/material';

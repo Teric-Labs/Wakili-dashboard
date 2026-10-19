@@ -24,6 +24,7 @@ import {
   Dashboard as DashboardIcon,
   Phonelink as ChannelsIcon,
   SmartToy as AiAgentIcon,
+  ReportProblem as EscalationsIcon,
   VerifiedUser as AuditIcon,
   NotificationsOutlined as NotificationsIcon,
   SettingsOutlined as SettingsIcon,
@@ -33,6 +34,7 @@ import {
 import CtdruMark from '../Brand/CtdruMark';
 import { tokens } from '../../theme/tokens';
 import ctdruLogo from '../../assets/logo/cropped-CTDR-U-Logo-1-150x150.png';
+import { getEscalations } from '../services/api';
 
 const sidebarWidth = 270;
 const SIDEBAR_DARK_BG = tokens.navy;
@@ -44,12 +46,28 @@ const Sidebar = ({ onLogout }) => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileAnchor, setProfileAnchor] = useState(null);
+  const [openEscalationCount, setOpenEscalationCount] = useState(0);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchOpenEscalationCount = async () => {
+      try {
+        const res = await getEscalations({ status: 'open' });
+        if (mounted && Array.isArray(res)) setOpenEscalationCount(res.length);
+      } catch {
+        // Badge just stays at its last known count if this fails.
+      }
+    };
+    fetchOpenEscalationCount();
+    return () => { mounted = false; };
+  }, [location.pathname]);
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon fontSize="small" />, path: '/' },
     { text: 'Disputes & Claims', icon: <ComplaintsIcon fontSize="small" />, path: '/complaints' },
     { text: 'Intake Channels', icon: <ChannelsIcon fontSize="small" />, path: '/channels' },
     { text: 'Wakilibot Insights', icon: <AiAgentIcon fontSize="small" />, path: '/ai-agent' },
+    { text: 'Escalations & Compliance', icon: <EscalationsIcon fontSize="small" />, path: '/escalations' },
     { text: 'Legal & Policy Archive', icon: <DocumentsIcon fontSize="small" />, path: '/documents' },
     { text: 'Audit & Security Logs', icon: <AuditIcon fontSize="small" />, path: '/audit-logs' }
   ];
@@ -141,6 +159,8 @@ const Sidebar = ({ onLogout }) => {
           {/* Notifications Item */}
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
+              component={Link}
+              to="/escalations"
               sx={{
                 borderRadius: 0,
                 py: 0.75,
@@ -151,15 +171,17 @@ const Sidebar = ({ onLogout }) => {
               }}
             >
               <ListItemIcon sx={{ color: MUTED, minWidth: 32 }}>
-                <Badge badgeContent={3} color="error" variant="dot">
+                <Badge badgeContent={openEscalationCount} color="error" variant="dot" invisible={openEscalationCount === 0}>
                   <NotificationsIcon fontSize="small" />
                 </Badge>
               </ListItemIcon>
-              <ListItemText 
-                primary="Notifications" 
-                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: NAV_IDLE }} 
+              <ListItemText
+                primary="Open Escalations"
+                primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600, color: NAV_IDLE }}
               />
-              <Chip label="3 New" size="small" color="error" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, borderRadius: 0.5 }} />
+              {openEscalationCount > 0 && (
+                <Chip label={`${openEscalationCount} New`} size="small" color="error" sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, borderRadius: 0.5 }} />
+              )}
             </ListItemButton>
           </ListItem>
 

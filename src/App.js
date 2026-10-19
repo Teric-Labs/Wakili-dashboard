@@ -6,6 +6,7 @@ import ChannelsPage from './components/Dashboard/ChannelsPage';
 import DocumentsPage from './components/Dashboard/DocumentsPage';
 import AiAgentPage from './components/Dashboard/AiAgentPage';
 import AuditLogsPage from './components/Dashboard/AuditLogsPage';
+import EscalationsPage from './components/Dashboard/EscalationsPage';
 import LoginPage from './components/Auth/LoginPage';
 import { getStoredAuth, clearStoredAuth } from './components/services/api';
 import { ThemeModeProvider } from './theme/ThemeContext';
@@ -33,6 +34,7 @@ function App() {
           <Route path="/channels" element={<ChannelsPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/ai-agent" element={<AiAgentPage />} />
+          <Route path="/escalations" element={<EscalationsPage />} />
           <Route path="/audit-logs" element={<AuditLogsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

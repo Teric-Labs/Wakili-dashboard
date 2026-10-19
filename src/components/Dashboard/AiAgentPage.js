@@ -14,7 +14,6 @@ import {
   Chip,
   Button,
   LinearProgress,
-  Avatar,
   Paper,
   Drawer,
   Divider,
@@ -58,6 +57,7 @@ const AiAgentPage = () => {
   const [targetSession, setTargetSession] = useState(null);
 
   const [aiSessions, setAiSessions] = useState([]);
+  const [sessionFilter, setSessionFilter] = useState('all');
   const [intentAccuracyData, setIntentAccuracyData] = useState([]);
   const [aiOverview, setAiOverview] = useState(null);
   const [languageDistribution, setLanguageDistribution] = useState([]);
@@ -258,9 +258,29 @@ const AiAgentPage = () => {
 
         {/* AI Conversation Sessions Stream Table */}
         <Card sx={{ p: 3 }}>
-          <Typography variant="subtitle1" fontWeight="700" sx={{ mb: 2 }}>
-            Recent Wakilibot sessions
-          </Typography>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight="700">
+              Recent Wakilibot sessions
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'escalated', label: 'Escalated to Officer' },
+                { key: 'resolved', label: 'Auto-Resolved' },
+              ].map((option) => (
+                <Chip
+                  key={option.key}
+                  label={option.label}
+                  size="small"
+                  clickable
+                  onClick={() => setSessionFilter(option.key)}
+                  color={sessionFilter === option.key ? 'primary' : 'default'}
+                  variant={sessionFilter === option.key ? 'filled' : 'outlined'}
+                  sx={{ fontWeight: 700 }}
+                />
+              ))}
+            </Stack>
+          </Stack>
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -276,16 +296,26 @@ const AiAgentPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {aiSessions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        No active AI agent sessions recorded.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  aiSessions.map((session) => (
+                {(() => {
+                  const filteredSessions = aiSessions.filter((session) => {
+                    if (sessionFilter === 'escalated') return session.status === 'Escalated to Officer';
+                    if (sessionFilter === 'resolved') return session.status === 'Auto-Resolved';
+                    return true;
+                  });
+                  if (filteredSessions.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {aiSessions.length === 0
+                              ? 'No active AI agent sessions recorded.'
+                              : 'No sessions match this filter.'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return filteredSessions.map((session) => (
                     <TableRow 
                       key={session.id} 
                       hover 
@@ -317,8 +347,8 @@ const AiAgentPage = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                  ));
+                })()}
               </TableBody>
             </Table>
           </TableContainer>
