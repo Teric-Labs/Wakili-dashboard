@@ -31,7 +31,19 @@ npm start
 
 Open `http://localhost:3000`.
 
-The API client is configured in `src/components/services/api.js` and defaults to `http://localhost:8000`. Update it for your deployment environment.
+Copy `.env.example` to `.env` and set your backend URL:
+
+```bash
+cp .env.example .env
+npm start
+```
+
+| Variable | Required | Description |
+|---|---|---|
+| `REACT_APP_BACKEND_URL` | No | WakiliBot Core API base URL (default: hosted Render service) |
+| `PORT` | No | Dev-server port (default: `3000`, set to `3001` to avoid clashing with the web app) |
+
+All `REACT_APP_*` vars are baked into the bundle at build time by Create React App — they cannot be changed after the image is built.
 
 ## Testing
 
