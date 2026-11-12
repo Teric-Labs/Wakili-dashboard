@@ -43,9 +43,24 @@ CI=true npm test -- --watchAll=false
 
 ## Docker
 
+The image is published to GHCR on every merge to `main`. Pull and run it directly:
+
+```bash
+docker run -p 3001:3000 ghcr.io/teric-labs/wakili-dashboard:latest
+```
+
+Pass `REACT_APP_BACKEND_URL` to point it at your backend:
+
+```bash
+docker run -e REACT_APP_BACKEND_URL=https://your-backend.onrender.com \
+  -p 3001:3000 ghcr.io/teric-labs/wakili-dashboard:latest
+```
+
+### Build locally
+
 ```bash
 docker build -t wakili-dashboard .
-docker run --rm -p 3000:3000 wakili-dashboard
+docker run -p 3001:3000 wakili-dashboard
 ```
 
 This is a dev-server image (`npm start`), matching how the parent `phosai/docker-compose.yml` runs it — not a production static build.
