@@ -85,6 +85,16 @@ export const getIvrLogs = async () => {
   return response.data;
 };
 
+export const getWebLogs = async () => {
+  const response = await api.get('/channels/web/logs');
+  return response.data;
+};
+
+export const getAppLogs = async () => {
+  const response = await api.get('/channels/app/logs');
+  return response.data;
+};
+
 // --- Wakilibot AI Insights Endpoints ---
 export const getAiAgentOverview = async () => {
   const response = await api.get('/ai-agent/overview');

@@ -41,7 +41,14 @@ import {
 import Sidebar from '../Layout/Sidebar';
 import StatCard from './StatCard';
 import { tokens } from '../../theme/tokens';
-import { getChannelsOverview, getUssdLogs, getSmsLogs, getIvrLogs } from '../services/api';
+import {
+  getChannelsOverview,
+  getUssdLogs,
+  getSmsLogs,
+  getIvrLogs,
+  getWebLogs,
+  getAppLogs,
+} from '../services/api';
 
 const parseVolume = (value) => parseInt(String(value || '0').replace(/,/g, ''), 10) || 0;
 
@@ -55,6 +62,8 @@ const ChannelsPage = () => {
   const [ussdLogs, setUssdLogs] = useState([]);
   const [smsLogs, setSmsLogs] = useState([]);
   const [ivrLogs, setIvrLogs] = useState([]);
+  const [webLogs, setWebLogs] = useState([]);
+  const [appLogs, setAppLogs] = useState([]);
   const [overviewPage, setOverviewPage] = useState(0);
   const [overviewRowsPerPage, setOverviewRowsPerPage] = useState(10);
   const [ussdPage, setUssdPage] = useState(0);
@@ -63,6 +72,10 @@ const ChannelsPage = () => {
   const [smsRowsPerPage, setSmsRowsPerPage] = useState(10);
   const [ivrPage, setIvrPage] = useState(0);
   const [ivrRowsPerPage, setIvrRowsPerPage] = useState(10);
+  const [webPage, setWebPage] = useState(0);
+  const [webRowsPerPage, setWebRowsPerPage] = useState(10);
+  const [appPage, setAppPage] = useState(0);
+  const [appRowsPerPage, setAppRowsPerPage] = useState(10);
 
   React.useEffect(() => {
     fetchBackendChannelsData();
@@ -71,16 +84,20 @@ const ChannelsPage = () => {
   const fetchBackendChannelsData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, ussdRes, smsRes, ivrRes] = await Promise.all([
+      const [overviewRes, ussdRes, smsRes, ivrRes, webRes, appRes] = await Promise.all([
         getChannelsOverview().catch(() => null),
         getUssdLogs().catch(() => null),
         getSmsLogs().catch(() => null),
-        getIvrLogs().catch(() => null)
+        getIvrLogs().catch(() => null),
+        getWebLogs().catch(() => null),
+        getAppLogs().catch(() => null),
       ]);
       if (overviewRes) setChannelOverview(overviewRes);
-      if (ussdRes) setUssdLogs(ussdRes);
-      if (smsRes) setSmsLogs(smsRes);
-      if (ivrRes) setIvrLogs(ivrRes);
+      if (Array.isArray(ussdRes)) setUssdLogs(ussdRes);
+      if (Array.isArray(smsRes)) setSmsLogs(smsRes);
+      if (Array.isArray(ivrRes)) setIvrLogs(ivrRes);
+      if (Array.isArray(webRes)) setWebLogs(webRes);
+      if (Array.isArray(appRes)) setAppLogs(appRes);
     } catch (e) {
       console.error("Backend channels fetch error:", e);
     } finally {
@@ -99,6 +116,8 @@ const ChannelsPage = () => {
   const paginatedUssd = ussdLogs.slice(ussdPage * ussdRowsPerPage, ussdPage * ussdRowsPerPage + ussdRowsPerPage);
   const paginatedSms = smsLogs.slice(smsPage * smsRowsPerPage, smsPage * smsRowsPerPage + smsRowsPerPage);
   const paginatedIvr = ivrLogs.slice(ivrPage * ivrRowsPerPage, ivrPage * ivrRowsPerPage + ivrRowsPerPage);
+  const paginatedWeb = webLogs.slice(webPage * webRowsPerPage, webPage * webRowsPerPage + webRowsPerPage);
+  const paginatedApp = appLogs.slice(appPage * appRowsPerPage, appPage * appRowsPerPage + appRowsPerPage);
 
   const handleOpenMenu = (event) => {
     event.stopPropagation();
@@ -153,7 +172,7 @@ const ChannelsPage = () => {
         {(() => {
           const totalVolume = Array.isArray(channelOverview) && channelOverview.length > 0
             ? channelOverview.reduce((acc, c) => acc + parseVolume(c.volume), 0)
-            : ussdLogs.length + smsLogs.length + ivrLogs.length;
+            : ussdLogs.length + smsLogs.length + ivrLogs.length + webLogs.length + appLogs.length;
           const ranked = [...(channelOverview || [])].sort((a, b) => parseVolume(b.volume) - parseVolume(a.volume));
           const top = ranked[0];
           const onlineCount = (channelOverview || []).filter((c) => String(c.status || '').toUpperCase() === 'ONLINE').length;
@@ -183,8 +202,8 @@ const ChannelsPage = () => {
               <Grid item xs={12} sm={6} md={3}>
                 <StatCard
                   label="Channel logs"
-                  value={(ussdLogs.length + smsLogs.length + ivrLogs.length).toLocaleString()}
-                  hint={`${ussdLogs.length} USSD · ${smsLogs.length} SMS · ${ivrLogs.length} IVR`}
+                  value={(ussdLogs.length + smsLogs.length + ivrLogs.length + webLogs.length + appLogs.length).toLocaleString()}
+                  hint={`${webLogs.length} Web · ${ussdLogs.length} USSD · ${smsLogs.length} SMS · ${ivrLogs.length} IVR`}
                   icon={<SignalIcon fontSize="small" />}
                   accent={tokens.navyMid}
                   accentSoft="rgba(20, 52, 92, 0.1)"
@@ -689,7 +708,7 @@ const ChannelsPage = () => {
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">APP SESSIONS</Typography>
                   <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
-                    {parseVolume(findChannel('mobile')?.volume)}
+                    {parseVolume(findChannel('mobile')?.volume) || appLogs.length}
                   </Typography>
                 </Paper>
               </Grid>
@@ -711,20 +730,77 @@ const ChannelsPage = () => {
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">STATUS</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
-                    {findChannel('mobile')?.status || 'IDLE'}
-                  </Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">LOG ENTRIES</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>{appLogs.length}</Typography>
                 </Paper>
               </Grid>
             </Grid>
 
-            <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 1.5 }}>
-              Mobile app session logs
+            <Typography variant="subtitle2" fontWeight="800" sx={{ mb: 1.5 }}>
+              MOBILE APP SESSION LOGS
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No dedicated mobile app log feed yet — session counts come from conversation channel attribution.
-            </Typography>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>USER</TableCell>
+                    <TableCell>SESSION</TableCell>
+                    <TableCell>ACTIVITY</TableCell>
+                    <TableCell>INTENT</TableCell>
+                    <TableCell>TIMESTAMP</TableCell>
+                    <TableCell>STATUS</TableCell>
+                    <TableCell align="right">ACTIONS</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {appLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">No mobile app logs recorded yet</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedApp.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{log.user}</TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>{log.session}</TableCell>
+                        <TableCell>{log.steps}</TableCell>
+                        <TableCell>{log.intent}</TableCell>
+                        <TableCell>{log.time}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={log.status}
+                            size="small"
+                            color={log.status === 'Submitted' ? 'success' : 'warning'}
+                            sx={{ fontWeight: 700, fontSize: '0.65rem' }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={handleOpenMenu}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {appLogs.length > 0 && (
+              <TablePagination
+                component="div"
+                count={appLogs.length}
+                page={appPage}
+                onPageChange={(_e, p) => setAppPage(p)}
+                rowsPerPage={appRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setAppRowsPerPage(parseInt(e.target.value, 10));
+                  setAppPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+              />
+            )}
           </Card>
         )}
 
@@ -748,7 +824,7 @@ const ChannelsPage = () => {
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">WEB SESSIONS</Typography>
                   <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
-                    {parseVolume(findChannel('web')?.volume)}
+                    {parseVolume(findChannel('web')?.volume) || webLogs.length}
                   </Typography>
                 </Paper>
               </Grid>
@@ -770,20 +846,81 @@ const ChannelsPage = () => {
               </Grid>
               <Grid item xs={6} md={3}>
                 <Paper sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700">STATUS</Typography>
-                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>
-                    {findChannel('web')?.status || 'IDLE'}
-                  </Typography>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">LOG ENTRIES</Typography>
+                  <Typography variant="h5" fontWeight="800" sx={{ mt: 0.5 }}>{webLogs.length}</Typography>
                 </Paper>
               </Grid>
             </Grid>
 
-            <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 1.5 }}>
-              Web portal session logs
+            <Typography variant="subtitle2" fontWeight="800" sx={{ mb: 1.5 }}>
+              WEB PORTAL SESSION LOGS
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No dedicated web portal log feed yet — session counts come from conversation channel attribution.
-            </Typography>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>USER</TableCell>
+                    <TableCell>SESSION</TableCell>
+                    <TableCell>ACTIVITY</TableCell>
+                    <TableCell>INTENT</TableCell>
+                    <TableCell>PREVIEW</TableCell>
+                    <TableCell>TIMESTAMP</TableCell>
+                    <TableCell>STATUS</TableCell>
+                    <TableCell align="right">ACTIONS</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {webLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" color="text.secondary">No web portal logs recorded yet</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedWeb.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{log.user}</TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace' }}>{log.session}</TableCell>
+                        <TableCell>{log.steps}</TableCell>
+                        <TableCell>{log.intent}</TableCell>
+                        <TableCell sx={{ fontSize: '0.82rem', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {log.preview}
+                        </TableCell>
+                        <TableCell>{log.time}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={log.status}
+                            size="small"
+                            color={log.status === 'Submitted' ? 'success' : 'warning'}
+                            sx={{ fontWeight: 700, fontSize: '0.65rem' }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={handleOpenMenu}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {webLogs.length > 0 && (
+              <TablePagination
+                component="div"
+                count={webLogs.length}
+                page={webPage}
+                onPageChange={(_e, p) => setWebPage(p)}
+                rowsPerPage={webRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setWebRowsPerPage(parseInt(e.target.value, 10));
+                  setWebPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+              />
+            )}
           </Card>
         )}
 
