@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   Button,
   LinearProgress,
@@ -54,6 +55,14 @@ const ChannelsPage = () => {
   const [ussdLogs, setUssdLogs] = useState([]);
   const [smsLogs, setSmsLogs] = useState([]);
   const [ivrLogs, setIvrLogs] = useState([]);
+  const [overviewPage, setOverviewPage] = useState(0);
+  const [overviewRowsPerPage, setOverviewRowsPerPage] = useState(10);
+  const [ussdPage, setUssdPage] = useState(0);
+  const [ussdRowsPerPage, setUssdRowsPerPage] = useState(10);
+  const [smsPage, setSmsPage] = useState(0);
+  const [smsRowsPerPage, setSmsRowsPerPage] = useState(10);
+  const [ivrPage, setIvrPage] = useState(0);
+  const [ivrRowsPerPage, setIvrRowsPerPage] = useState(10);
 
   React.useEffect(() => {
     fetchBackendChannelsData();
@@ -82,6 +91,14 @@ const ChannelsPage = () => {
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  const paginatedOverview = channelOverview.slice(
+    overviewPage * overviewRowsPerPage,
+    overviewPage * overviewRowsPerPage + overviewRowsPerPage
+  );
+  const paginatedUssd = ussdLogs.slice(ussdPage * ussdRowsPerPage, ussdPage * ussdRowsPerPage + ussdRowsPerPage);
+  const paginatedSms = smsLogs.slice(smsPage * smsRowsPerPage, smsPage * smsRowsPerPage + smsRowsPerPage);
+  const paginatedIvr = ivrLogs.slice(ivrPage * ivrRowsPerPage, ivrPage * ivrRowsPerPage + ivrRowsPerPage);
 
   const handleOpenMenu = (event) => {
     event.stopPropagation();
@@ -244,7 +261,7 @@ const ChannelsPage = () => {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        channelOverview.map((row) => (
+                        paginatedOverview.map((row) => (
                           <TableRow key={row.name} hover>
                             <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
                             <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{row.type}</TableCell>
@@ -271,6 +288,21 @@ const ChannelsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                {channelOverview.length > 0 && (
+                  <TablePagination
+                    component="div"
+                    count={channelOverview.length}
+                    page={overviewPage}
+                    onPageChange={(_e, p) => setOverviewPage(p)}
+                    rowsPerPage={overviewRowsPerPage}
+                    onRowsPerPageChange={(e) => {
+                      setOverviewRowsPerPage(parseInt(e.target.value, 10));
+                      setOverviewPage(0);
+                    }}
+                    rowsPerPageOptions={[5, 10, 25, 50]}
+                    sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+                  />
+                )}
               </Card>
             </Grid>
 
@@ -377,7 +409,7 @@ const ChannelsPage = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ussdLogs.map((log) => (
+                    paginatedUssd.map((log) => (
                       <TableRow key={log.id} hover>
                         <TableCell sx={{ fontWeight: 600 }}>{log.telco}</TableCell>
                         <TableCell sx={{ fontFamily: 'monospace' }}>{log.code}</TableCell>
@@ -403,6 +435,21 @@ const ChannelsPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            {ussdLogs.length > 0 && (
+              <TablePagination
+                component="div"
+                count={ussdLogs.length}
+                page={ussdPage}
+                onPageChange={(_e, p) => setUssdPage(p)}
+                rowsPerPage={ussdRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setUssdRowsPerPage(parseInt(e.target.value, 10));
+                  setUssdPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+              />
+            )}
           </Card>
         )}
 
@@ -477,7 +524,7 @@ const ChannelsPage = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    smsLogs.map((log) => (
+                    paginatedSms.map((log) => (
                       <TableRow key={log.id} hover>
                         <TableCell sx={{ fontFamily: 'monospace' }}>{log.sender}</TableCell>
                         <TableCell>{log.carrier}</TableCell>
@@ -495,6 +542,21 @@ const ChannelsPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            {smsLogs.length > 0 && (
+              <TablePagination
+                component="div"
+                count={smsLogs.length}
+                page={smsPage}
+                onPageChange={(_e, p) => setSmsPage(p)}
+                rowsPerPage={smsRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setSmsRowsPerPage(parseInt(e.target.value, 10));
+                  setSmsPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+              />
+            )}
           </Card>
         )}
 
@@ -570,7 +632,7 @@ const ChannelsPage = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ivrLogs.map((log) => (
+                    paginatedIvr.map((log) => (
                       <TableRow key={log.id} hover>
                         <TableCell sx={{ fontFamily: 'monospace' }}>{log.caller}</TableCell>
                         <TableCell>{log.language}</TableCell>
@@ -589,6 +651,21 @@ const ChannelsPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            {ivrLogs.length > 0 && (
+              <TablePagination
+                component="div"
+                count={ivrLogs.length}
+                page={ivrPage}
+                onPageChange={(_e, p) => setIvrPage(p)}
+                rowsPerPage={ivrRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setIvrRowsPerPage(parseInt(e.target.value, 10));
+                  setIvrPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+              />
+            )}
           </Card>
         )}
 

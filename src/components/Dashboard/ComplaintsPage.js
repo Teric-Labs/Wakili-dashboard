@@ -43,7 +43,10 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckIcon,
   Schedule as ScheduleIcon,
-  Assessment as AnalyticsIcon
+  Assessment as AnalyticsIcon,
+  AttachFile as AttachFileIcon,
+  OpenInNew as OpenInNewIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import {
   ResponsiveContainer,
@@ -60,7 +63,18 @@ import {
 import Sidebar from '../Layout/Sidebar';
 import StatCard from './StatCard';
 import { tokens } from '../../theme/tokens';
-import { createComplaint, updateComplaint, createIncident, updateIncident, getComplaints, getIncidents, getCaseTypeAnalytics, getFintechBreakdown } from '../services/api';
+import {
+  createComplaint,
+  updateComplaint,
+  createIncident,
+  updateIncident,
+  getComplaints,
+  getIncidents,
+  getCaseTypeAnalytics,
+  getFintechBreakdown,
+  getComplaintEvidence,
+  refreshComplaintEvidenceLink,
+} from '../services/api';
 
 const EMPTY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month) => ({
   month,
@@ -151,11 +165,42 @@ const ComplaintsPage = () => {
   const [openCreateComplaint, setOpenCreateComplaint] = useState(false);
   const [openCreateIncident, setOpenCreateIncident] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
+  const [caseEvidence, setCaseEvidence] = useState([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidenceLink, setEvidenceLink] = useState(null);
   const [actionAnchor, setActionAnchor] = useState(null);
   const [actionTargetCase, setActionTargetCase] = useState(null);
 
   // Complaints State
   const [complaints, setComplaints] = useState([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadEvidence = async () => {
+      if (!selectedCase?.id || selectedCase.case_type === 'Fraud Incident') {
+        setCaseEvidence([]);
+        setEvidenceLink(null);
+        return;
+      }
+      setEvidenceLoading(true);
+      try {
+        const items = await getComplaintEvidence(selectedCase.id);
+        if (!cancelled) setCaseEvidence(Array.isArray(items) ? items : []);
+        if (selectedCase.evidence_upload_url) {
+          if (!cancelled) setEvidenceLink(selectedCase.evidence_upload_url);
+        }
+      } catch (err) {
+        console.error('Evidence load failed', err);
+        if (!cancelled) setCaseEvidence([]);
+      } finally {
+        if (!cancelled) setEvidenceLoading(false);
+      }
+    };
+    loadEvidence();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCase]);
 
   // Incidents State
   const [incidents, setIncidents] = useState([]);
@@ -686,6 +731,83 @@ const ComplaintsPage = () => {
                     <Typography variant="body2">{selectedCase.description || 'No detailed statement provided.'}</Typography>
                   </Paper>
                 </Box>
+
+                {selectedCase.case_type !== 'Fraud Incident' && (
+                  <Box>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight="700">
+                        CONSUMER EVIDENCE
+                      </Typography>
+                      <Button
+                        size="small"
+                        startIcon={<LinkIcon fontSize="small" />}
+                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                        onClick={async () => {
+                          try {
+                            const link = await refreshComplaintEvidenceLink(selectedCase.id);
+                            setEvidenceLink(link.evidence_upload_url);
+                            if (link.evidence_upload_url) {
+                              await navigator.clipboard?.writeText(link.evidence_upload_url);
+                            }
+                          } catch (err) {
+                            console.error('Evidence link refresh failed', err);
+                          }
+                        }}
+                      >
+                        Copy upload link
+                      </Button>
+                    </Stack>
+                    {evidenceLoading ? (
+                      <Typography variant="body2" color="text.secondary">Loading evidence…</Typography>
+                    ) : caseEvidence.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        No photos/PDFs attached yet. Share the upload link for IVR/USSD/SMS follow-up.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1}>
+                        {caseEvidence.map((ev) => (
+                          <Paper
+                            key={ev.evidence_id}
+                            sx={{
+                              p: 1.5,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                            }}
+                          >
+                            <AttachFileIcon fontSize="small" color="primary" />
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" fontWeight={700} noWrap>
+                                {ev.filename || ev.evidence_id}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {(ev.channel || 'web') + (ev.file_size ? ` · ${Math.round(ev.file_size / 1024)} KB` : '')}
+                              </Typography>
+                            </Box>
+                            {ev.file_url && (
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={ev.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Open evidence"
+                              >
+                                <OpenInNewIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                          </Paper>
+                        ))}
+                      </Stack>
+                    )}
+                    {evidenceLink && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, wordBreak: 'break-all' }}>
+                        {evidenceLink}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </Stack>
             </Box>
           )}

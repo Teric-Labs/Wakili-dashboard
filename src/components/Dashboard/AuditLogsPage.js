@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   Button,
   LinearProgress,
@@ -44,6 +45,10 @@ const AuditLogsPage = () => {
   const [officerRoster, setOfficerRoster] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditStats, setAuditStats] = useState(null);
+  const [logsPage, setLogsPage] = useState(0);
+  const [logsRowsPerPage, setLogsRowsPerPage] = useState(5);
+  const [rosterPage, setRosterPage] = useState(0);
+  const [rosterRowsPerPage, setRosterRowsPerPage] = useState(5);
 
   React.useEffect(() => {
     fetchBackendAuditData();
@@ -114,6 +119,38 @@ const AuditLogsPage = () => {
       id.includes(s)
     );
   });
+
+  const paginatedLogs = filteredLogs.slice(
+    logsPage * logsRowsPerPage,
+    logsPage * logsRowsPerPage + logsRowsPerPage
+  );
+  const paginatedRoster = safeRoster.slice(
+    rosterPage * rosterRowsPerPage,
+    rosterPage * rosterRowsPerPage + rosterRowsPerPage
+  );
+
+  const handleLogsPageChange = (_event, newPage) => {
+    setLogsPage(newPage);
+  };
+
+  const handleLogsRowsPerPageChange = (event) => {
+    setLogsRowsPerPage(parseInt(event.target.value, 10));
+    setLogsPage(0);
+  };
+
+  const handleRosterPageChange = (_event, newPage) => {
+    setRosterPage(newPage);
+  };
+
+  const handleRosterRowsPerPageChange = (event) => {
+    setRosterRowsPerPage(parseInt(event.target.value, 10));
+    setRosterPage(0);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setLogsPage(0);
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -205,9 +242,9 @@ const AuditLogsPage = () => {
                 {safeRoster.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">No officers in roster yet</Typography>
                 ) : (
-                  safeRoster.map((officer, idx) => (
+                  paginatedRoster.map((officer, idx) => (
                     <Stack
-                      key={officer.name || officer.officer_name || idx}
+                      key={officer.id || officer.name || officer.officer_name || idx}
                       direction="row"
                       justifyContent="space-between"
                       alignItems="center"
@@ -227,6 +264,18 @@ const AuditLogsPage = () => {
                   ))
                 )}
               </Stack>
+              {safeRoster.length > 0 && (
+                <TablePagination
+                  component="div"
+                  count={safeRoster.length}
+                  page={rosterPage}
+                  onPageChange={handleRosterPageChange}
+                  rowsPerPage={rosterRowsPerPage}
+                  onRowsPerPageChange={handleRosterRowsPerPageChange}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  sx={{ mt: 1, borderTop: `1px solid ${theme.palette.divider}` }}
+                />
+              )}
             </Card>
           </Grid>
 
@@ -241,7 +290,7 @@ const AuditLogsPage = () => {
                   size="small"
                   placeholder="Filter officer or action..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={handleSearchChange}
                   InputProps={{ startAdornment: <SearchIcon color="action" sx={{ mr: 1, fontSize: 18 }} /> }}
                   sx={{ width: 220 }}
                 />
@@ -268,7 +317,7 @@ const AuditLogsPage = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredLogs.map((log, idx) => (
+                      paginatedLogs.map((log, idx) => (
                         <TableRow key={log.id || idx} hover>
                           <TableCell sx={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{log.timestamp || log.created_at || '—'}</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>{log.officer || log.officer_name || log.user || log.actor || 'System'}</TableCell>
@@ -285,6 +334,18 @@ const AuditLogsPage = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              {filteredLogs.length > 0 && (
+                <TablePagination
+                  component="div"
+                  count={filteredLogs.length}
+                  page={logsPage}
+                  onPageChange={handleLogsPageChange}
+                  rowsPerPage={logsRowsPerPage}
+                  onRowsPerPageChange={handleLogsRowsPerPageChange}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+                />
+              )}
             </Card>
           </Grid>
         </Grid>

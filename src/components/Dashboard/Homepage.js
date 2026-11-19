@@ -14,6 +14,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   IconButton,
   Menu,
   MenuItem,
@@ -57,6 +58,8 @@ const Homepage = () => {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [realComplaints, setRealComplaints] = useState([]);
   const [realIncidents, setRealIncidents] = useState([]);
@@ -130,6 +133,17 @@ const Homepage = () => {
   const handleCloseMenu = () => {
     setMenuAnchor(null);
   };
+
+  const handleChangePage = (_event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedCases = allCases.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const getStatusChip = (status) => {
     const st = (status || 'received').toLowerCase();
@@ -331,7 +345,7 @@ const Homepage = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                allCases.slice(0, 10).map((row) => (
+                paginatedCases.map((row) => (
                   <TableRow key={row.id || row.complaint_id} hover>
                     <TableCell sx={{ fontWeight: 600 }}>
                       {row.contact_details || row.reporter_contact || 'Anonymous / Web Intake'}
@@ -352,6 +366,19 @@ const Homepage = () => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {allCases.length > 0 && (
+          <TablePagination
+            component="div"
+            count={allCases.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[10, 25, 50]}
+            sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+          />
+        )}
 
         <Menu
           anchorEl={menuAnchor}

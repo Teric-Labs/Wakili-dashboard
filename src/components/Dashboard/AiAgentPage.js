@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   Button,
   LinearProgress,
@@ -55,6 +56,8 @@ const AiAgentPage = () => {
   const [selectedSession, setSelectedSession] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [targetSession, setTargetSession] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [aiSessions, setAiSessions] = useState([]);
   const [sessionFilter, setSessionFilter] = useState('all');
@@ -117,6 +120,25 @@ const AiAgentPage = () => {
     }
     handleCloseMenu();
   };
+
+  const handleChangePage = (_event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const filteredSessions = aiSessions.filter((session) => {
+    if (sessionFilter === 'escalated') return session.status === 'Escalated to Officer';
+    if (sessionFilter === 'resolved') return session.status === 'Auto-Resolved';
+    return true;
+  });
+  const paginatedSessions = filteredSessions.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -296,26 +318,18 @@ const AiAgentPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(() => {
-                  const filteredSessions = aiSessions.filter((session) => {
-                    if (sessionFilter === 'escalated') return session.status === 'Escalated to Officer';
-                    if (sessionFilter === 'resolved') return session.status === 'Auto-Resolved';
-                    return true;
-                  });
-                  if (filteredSessions.length === 0) {
-                    return (
-                      <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {aiSessions.length === 0
-                              ? 'No active AI agent sessions recorded.'
-                              : 'No sessions match this filter.'}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }
-                  return filteredSessions.map((session) => (
+                {filteredSessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {aiSessions.length === 0
+                          ? 'No active AI agent sessions recorded.'
+                          : 'No sessions match this filter.'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedSessions.map((session) => (
                     <TableRow 
                       key={session.id} 
                       hover 
@@ -347,11 +361,24 @@ const AiAgentPage = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  ));
-                })()}
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
+
+          {filteredSessions.length > 0 && (
+            <TablePagination
+              component="div"
+              count={filteredSessions.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+            />
+          )}
 
           <Menu
             anchorEl={menuAnchor}

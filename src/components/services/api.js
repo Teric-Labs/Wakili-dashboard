@@ -147,6 +147,16 @@ export const updateComplaint = async (complaintId, data) => {
   return response.data;
 };
 
+export const getComplaintEvidence = async (complaintId) => {
+  const response = await api.get(`/complaints/${complaintId}/evidence`);
+  return response.data;
+};
+
+export const refreshComplaintEvidenceLink = async (complaintId) => {
+  const response = await api.post(`/complaints/${complaintId}/evidence-link`);
+  return response.data;
+};
+
 // --- Incidents Endpoints ---
 export const getIncidents = async (params = {}) => {
   const { status, product_service, page = 1, page_size = 50 } = params;
@@ -228,7 +238,19 @@ export const updateDocument = async (documentId, data) => {
 };
 
 export const deleteDocument = async (documentId) => {
-  const response = await api.delete(`/documents/${documentId}`);
+  const auth = getStoredAuth();
+  const userId = auth?.user?.user_id || auth?.user_id || '';
+  const body = new URLSearchParams();
+  if (userId) body.append('user_id', userId);
+  const response = await api.delete(`/documents/${documentId}`, {
+    data: body,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  return response.data;
+};
+
+export const resyncDocumentKnowledge = async (documentId) => {
+  const response = await api.post(`/documents/${documentId}/resync-kb`);
   return response.data;
 };
 

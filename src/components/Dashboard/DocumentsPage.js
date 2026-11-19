@@ -9,6 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   Button,
   TextField,
@@ -38,7 +39,15 @@ import {
 import Sidebar from '../Layout/Sidebar';
 import StatCard from './StatCard';
 import { tokens } from '../../theme/tokens';
-import { getDocuments, uploadDocument, deleteDocument, downloadDocument, getDocumentStats } from '../services/api';
+import {
+  getDocuments,
+  uploadDocument,
+  deleteDocument,
+  downloadDocument,
+  getDocumentStats,
+  getStoredAuth,
+  resyncDocumentKnowledge,
+} from '../services/api';
 
 const DocumentsPage = () => {
   const theme = useTheme();
@@ -48,6 +57,8 @@ const DocumentsPage = () => {
   const [category, setCategory] = useState('all');
   const [openUpload, setOpenUpload] = useState(false);
   const [docStats, setDocStats] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Menu state for actions
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -96,7 +107,12 @@ const DocumentsPage = () => {
     formData.append('description', description);
     formData.append('category', docCategory);
     formData.append('tags', tags);
-    formData.append('uploader_id', 'admin-user');
+    const auth = getStoredAuth();
+    const staffUserId = auth?.user?.user_id || auth?.user_id;
+    if (staffUserId) {
+      formData.append('uploader_id', staffUserId);
+      formData.append('user_id', staffUserId);
+    }
 
     try {
       await uploadDocument(formData);
@@ -185,6 +201,17 @@ const DocumentsPage = () => {
     const matchesCategory = category === 'all' || docCat === (category || '').toLowerCase();
     return matchesSearch && matchesCategory;
   });
+
+  const paginatedDocs = filteredDocs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const handleChangePage = (_event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -282,7 +309,10 @@ const DocumentsPage = () => {
               size="small"
               placeholder="Search documents by title..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               InputProps={{ startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} /> }}
               sx={{ width: { xs: '100%', sm: 340 } }}
             />
@@ -291,7 +321,10 @@ const DocumentsPage = () => {
               select
               label="Filter Category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPage(0);
+              }}
               sx={{ width: 180 }}
             >
               <MenuItem value="all">All Categories</MenuItem>
@@ -309,6 +342,7 @@ const DocumentsPage = () => {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 800 }}>Document Title</TableCell>
                   <TableCell sx={{ fontWeight: 800 }}>Category</TableCell>
+                  <TableCell sx={{ fontWeight: 800 }}>KB Sync</TableCell>
                   <TableCell sx={{ fontWeight: 800 }}>File Size</TableCell>
                   <TableCell sx={{ fontWeight: 800 }}>Downloads</TableCell>
                   <TableCell sx={{ fontWeight: 800 }}>Upload Date</TableCell>
@@ -318,18 +352,34 @@ const DocumentsPage = () => {
               <TableBody>
                 {filteredDocs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                       <Typography variant="body2" color="text.secondary">
                         No matching documents found. Click "Upload Legal Document" to store files.
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredDocs.map((doc) => (
+                  paginatedDocs.map((doc) => (
                     <TableRow key={doc.id} hover>
                       <TableCell sx={{ fontWeight: 700 }}>{doc.title}</TableCell>
                       <TableCell>
                         <Chip label={doc.category} size="small" color={getCategoryColor(doc.category)} sx={{ fontWeight: 700, textTransform: 'capitalize' }} />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={doc.kb_sync_status || 'unknown'}
+                          size="small"
+                          color={
+                            doc.kb_sync_status === 'synced'
+                              ? 'success'
+                              : doc.kb_sync_status === 'failed'
+                                ? 'error'
+                                : doc.kb_sync_status === 'pending'
+                                  ? 'warning'
+                                  : 'default'
+                          }
+                          sx={{ fontWeight: 700, textTransform: 'capitalize' }}
+                        />
                       </TableCell>
                       <TableCell>{doc.file_size_mb}</TableCell>
                       <TableCell>{doc.download_count}</TableCell>
@@ -346,6 +396,19 @@ const DocumentsPage = () => {
             </Table>
           </TableContainer>
 
+          {filteredDocs.length > 0 && (
+            <TablePagination
+              component="div"
+              count={filteredDocs.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
+            />
+          )}
+
           <Menu
             anchorEl={menuAnchor}
             open={Boolean(menuAnchor)}
@@ -354,6 +417,22 @@ const DocumentsPage = () => {
           >
             <MenuItem onClick={handleDownload} sx={{ fontSize: '0.82rem' }}>
               <DownloadIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> Download Document
+            </MenuItem>
+            <MenuItem
+              onClick={async () => {
+                if (!selectedDoc?.id) return;
+                try {
+                  await resyncDocumentKnowledge(selectedDoc.id);
+                  handleCloseMenu();
+                  fetchDocs();
+                } catch (err) {
+                  console.error('KB resync failed', err);
+                  handleCloseMenu();
+                }
+              }}
+              sx={{ fontSize: '0.82rem' }}
+            >
+              <ComplianceIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} /> Resync to Agent KB
             </MenuItem>
             <MenuItem onClick={handleCloseMenu} sx={{ fontSize: '0.82rem' }}>
               <ViewIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} /> Inspect Details
