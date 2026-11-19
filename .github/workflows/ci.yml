@@ -1,9 +1,9 @@
 name: CI/CD
 
 # Every push/PR runs the test suite and a production build. On pushes to main
-# the Docker image is built and pushed to GHCR only after tests pass. PRs only
-# run tests — no image is pushed. Render's GitHub integration auto-deploys main;
-# this workflow is the quality gate plus image publisher.
+# the Docker image is built and pushed to GHCR only after tests pass, then
+# Render is triggered via deploy hook to pull the new image. PRs only run tests
+# — no image is pushed and no deploy is triggered.
 
 on:
   push:
