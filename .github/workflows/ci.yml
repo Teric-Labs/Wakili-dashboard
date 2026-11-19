@@ -90,3 +90,21 @@ jobs:
         run: |
           echo "Image pushed successfully to ${{ env.IMAGE_NAME }}"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
+
+  deploy-render:
+    name: Deploy to Render
+    needs: [build-and-push]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::warning::Secret RENDER_DEPLOY_HOOK is not set. Image is on GHCR but Render was not triggered."
+            echo "Add it under Settings → Secrets → Actions from Render → Service → Settings → Deploy Hook."
+            exit 0
+          fi
+          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK"
+          echo "Render deploy hook triggered for ghcr.io/teric-labs/wakili-dashboard:latest"

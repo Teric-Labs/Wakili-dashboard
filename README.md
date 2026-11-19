@@ -77,6 +77,14 @@ docker run -p 3001:3000 wakili-dashboard
 
 This is a dev-server image (`npm start`), matching how the parent `phosai/docker-compose.yml` runs it — not a production static build.
 
+## Render (CI → GHCR → deploy)
+
+On `main`, CI tests + production build, pushes `ghcr.io/teric-labs/wakili-dashboard:latest`, then POSTs `RENDER_DEPLOY_HOOK` if set.
+
+1. Render Web Service image: `ghcr.io/teric-labs/wakili-dashboard:latest` (port `3000`)
+2. Add `ghcr.io` registry credentials (`read:packages` PAT)
+3. Copy the service **Deploy Hook** into this repo’s Actions secret `RENDER_DEPLOY_HOOK`
+
 ## Available Scripts
 
 In the project directory, you can run:
